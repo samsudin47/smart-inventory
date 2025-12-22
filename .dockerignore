@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+.dockerignore
+Dockerfile
+deploy/
+
+# IDE
+.vscode
+.idea
+.fleet
+.zed
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies (will be installed in container)
+node_modules
+vendor
+
+# Build artifacts
+public/build
+public/hot
+bootstrap/ssr
+
+# Logs
+*.log
+storage/logs/*
+!storage/logs/.gitkeep
+
+# Cache
+.phpunit.cache
+.phpunit.result.cache
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+
+# Testing
+.phpunit.cache
+tests/_output
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel specific
+storage/*.key
+storage/pail
+Homestead.json
+Homestead.yaml
+auth.json
+
+# Documentation
+README.md
+*.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
