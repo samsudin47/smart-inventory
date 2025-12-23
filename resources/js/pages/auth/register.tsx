@@ -2,15 +2,25 @@ import RegisteredUserController from '@/actions/App/Http/Controllers/Auth/Regist
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { useState } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function Register() {
+    const [role, setRole] = useState<string>('');
+
     return (
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             <Head title="Register" />
@@ -20,8 +30,9 @@ export default function Register() {
                 disableWhileProcessing
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
+                {({ processing, errors, setData }) => (
                     <>
+                        <input type="hidden" name="role" value={role} />
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
@@ -54,17 +65,22 @@ export default function Register() {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="role">Role</Label>
-                                <select
-                                    id="role"
-                                    name="role"
+                                <Select
+                                    value={role}
+                                    onValueChange={(value) => {
+                                        setRole(value);
+                                        setData('role', value);
+                                    }}
                                     required
-                                    tabIndex={3}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <option value="">Pilih Role</option>
-                                    <option value="Assistant Area Manager">Assistant Area Manager</option>
-                                    <option value="Field Assistant">Field Assistant</option>
-                                </select>
+                                    <SelectTrigger id="role" tabIndex={3}>
+                                        <SelectValue placeholder="Pilih Role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
+                                        <SelectItem value="Field Assistant">Field Assistant</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <InputError message={errors.role} />
                             </div>
 

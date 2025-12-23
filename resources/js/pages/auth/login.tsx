@@ -5,11 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { useState } from 'react';
 
 interface LoginProps {
     status?: string;
@@ -17,13 +25,16 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
+    const [role, setRole] = useState<string>('');
+
     return (
         <AuthLayout title="Log in to your account Smart-Inventory" description="Enter your email and password below to log in">
             <Head title="Log in" />
 
             <Form {...AuthenticatedSessionController.store.form()} resetOnSuccess={['password']} className="flex flex-col gap-6">
-                {({ processing, errors }) => (
+                {({ processing, errors, data, setData }) => (
                     <>
+                        <input type="hidden" name="role" value={role} />
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
@@ -42,18 +53,22 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="role">Role</Label>
-                                <select
-                                    id="role"
-                                    name="role"
+                                <Select
+                                    value={role}
+                                    onValueChange={(value) => {
+                                        setRole(value);
+                                        setData('role', value);
+                                    }}
                                     required
-                                    tabIndex={2}
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                    style={{ backgroundColor: 'white', appearance: 'auto' }}
                                 >
-                                    <option value="">Pilih Role</option>
-                                    <option value="Assistant Area Manager">Assistant Area Manager</option>
-                                    <option value="Field Assistant">Field Assistant</option>
-                                </select>
+                                    <SelectTrigger id="role" tabIndex={2}>
+                                        <SelectValue placeholder="Pilih Role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
+                                        <SelectItem value="Field Assistant">Field Assistant</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <InputError message={errors.role} />
                             </div>
 
