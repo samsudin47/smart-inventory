@@ -7,8 +7,10 @@
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
+# Storage directory is tracked, only ignore specific sensitive files
 /storage/*.key
 /storage/pail
+# Note: storage/stock_masuk/nota/ and other storage subdirectories are tracked
 /vendor
 .env
 .env.backup
