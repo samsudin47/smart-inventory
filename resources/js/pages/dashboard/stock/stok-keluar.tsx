@@ -82,6 +82,7 @@ export default function StokKeluarDashboard({ user }: Props) {
         kios_id: '',
         product_id: '',
         quantity: '',
+        satuan: '',
         tanggal: new Date().toISOString().split('T')[0],
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,6 +232,24 @@ export default function StokKeluarDashboard({ user }: Props) {
         fetchKios();
         fetchProducts();
     }, [fetchKios, fetchProducts]);
+
+    // Auto-fill satuan when product_id changes
+    useEffect(() => {
+        if (formData.product_id) {
+            const selectedProduct = products.find((p) => p.id.toString() === formData.product_id);
+            if (selectedProduct) {
+                setFormData((prev) => ({
+                    ...prev,
+                    satuan: selectedProduct.satuan || '',
+                }));
+            }
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                satuan: '',
+            }));
+        }
+    }, [formData.product_id, products]);
 
     // Handle download dengan CSRF token handling
     const handleDownload = useCallback(async () => {
@@ -504,6 +523,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                     kios_id: '',
                     product_id: '',
                     quantity: '',
+                    satuan: '',
                     tanggal: new Date().toISOString().split('T')[0],
                 });
                 setFieldErrors({});
@@ -582,6 +602,7 @@ export default function StokKeluarDashboard({ user }: Props) {
             kios_id: item.kios_id.toString(),
             product_id: item.product_id.toString(),
             quantity: item.quantity.toString(),
+            satuan: item.product.satuan || '',
             tanggal: item.tanggal.split('T')[0],
         });
         setFieldErrors({});
@@ -698,6 +719,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                                         <TableHead className="min-w-[150px]">NAMA KIOS</TableHead>
                                         <TableHead className="min-w-[200px]">BARANG KELUAR</TableHead>
                                         <TableHead className="min-w-[120px]">JUMLAH (PCS)</TableHead>
+                                        <TableHead className="min-w-[100px]">SATUAN</TableHead>
                                         <TableHead className="min-w-[150px]">TANGGAL BARANG KELUAR</TableHead>
                                         {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
                                             <TableHead className="min-w-[100px]">Aksi</TableHead>
@@ -722,6 +744,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="align-top">{row.item.quantity}</TableCell>
+                                            <TableCell className="align-top">{row.item.product.satuan || '-'}</TableCell>
                                             <TableCell className="align-top">
                                                 {new Date(row.item.tanggal).toLocaleDateString('id-ID', {
                                                     year: 'numeric',
@@ -758,7 +781,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                                     ))}
                                     {stockKeluar.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                                            <TableCell colSpan={user.role === 'Field Assistant' || user.role === 'Assistant Area Manager' ? 7 : 6} className="text-center py-8 text-gray-500">
                                                 Tidak ada data stock keluar
                                             </TableCell>
                                         </TableRow>
@@ -881,21 +904,31 @@ export default function StokKeluarDashboard({ user }: Props) {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="tanggal">TANGGAL BARANG KELUAR *</Label>
+                                        <Label htmlFor="satuan">SATUAN</Label>
                                         <Input
-                                            id="tanggal"
-                                            type="date"
-                                            value={formData.tanggal}
-                                            onChange={(e) => handleFieldChange('tanggal', e.target.value)}
-                                            className={fieldErrors.tanggal ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                                            required
+                                            id="satuan"
+                                            type="text"
+                                            value={formData.satuan}
+                                            readOnly
+                                            className="cursor-not-allowed bg-gray-50 dark:bg-gray-700"
                                         />
-                                        {fieldErrors.tanggal && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">
-                                                {fieldErrors.tanggal}
-                                            </p>
-                                        )}
                                     </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tanggal">TANGGAL BARANG KELUAR *</Label>
+                                    <Input
+                                        id="tanggal"
+                                        type="date"
+                                        value={formData.tanggal}
+                                        onChange={(e) => handleFieldChange('tanggal', e.target.value)}
+                                        className={fieldErrors.tanggal ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                                        required
+                                    />
+                                    {fieldErrors.tanggal && (
+                                        <p className="text-sm text-red-600 dark:text-red-400">
+                                            {fieldErrors.tanggal}
+                                        </p>
+                                    )}
                                 </div>
                                 <DialogFooter>
                                     <Button

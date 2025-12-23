@@ -118,7 +118,7 @@ class StockKeluarController extends Controller
         // Field Assistant hanya bisa membuat stock keluar untuk diri mereka sendiri
         $userId = Auth::id();
         $userRole = Auth::user()->role;
-        
+
         if ($userRole === 'Field Assistant' && $validated['user_id'] != $userId) {
             return response()->json([
                 'success' => false,
@@ -217,7 +217,7 @@ class StockKeluarController extends Controller
         // Field Assistant hanya bisa mengubah stock keluar untuk diri mereka sendiri
         $userId = Auth::id();
         $userRole = Auth::user()->role;
-        
+
         if ($userRole === 'Field Assistant' && $validated['user_id'] != $userId) {
             return response()->json([
                 'success' => false,
@@ -229,7 +229,7 @@ class StockKeluarController extends Controller
         $productChanged = $stockKeluar->product_id != $validated['product_id'];
         $kiosChanged = $stockKeluar->kios_id != $validated['kios_id'];
         $quantityChanged = $stockKeluar->quantity != $validated['quantity'];
-        
+
         // Untuk Field Assistant, validasi berdasarkan stock masuk dan keluar milik user tersebut saja
 
         if ($userRole === 'Field Assistant') {
@@ -269,7 +269,7 @@ class StockKeluarController extends Controller
         }
 
         $stockTersedia = max(0, $totalMasuk - $totalKeluar);
-        
+
         if ($stockTersedia < $validated['quantity']) {
             throw ValidationException::withMessages([
                 'quantity' => [
@@ -406,7 +406,7 @@ class StockKeluarController extends Controller
         if ($monthFilter) {
             $titleParts[] = $monthFilter;
         }
-        $title = count($titleParts) > 0 
+        $title = count($titleParts) > 0
             ? "Stock Keluar - " . implode(' - ', $titleParts)
             : "Stock Keluar - Semua Data";
         $sheet->setCellValue('A1', $title);
@@ -415,7 +415,7 @@ class StockKeluarController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Set headers
-        $headers = ['No', 'Nama FA', 'Nama Kios', 'Barang Keluar', 'Jumlah (PCS)', 'Tanggal Barang Keluar'];
+        $headers = ['No', 'Nama FA', 'Nama Kios', 'Barang Keluar', 'Quantum (PCS)', 'Tanggal Barang Keluar'];
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '3', $header);
@@ -458,7 +458,7 @@ class StockKeluarController extends Controller
             : 'stock-keluar-semua-data.xlsx';
 
         $writer = new Xlsx($spreadsheet);
-        
+
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $filename, [

@@ -1,29 +1,15 @@
-import { type User } from '@/types';
-import { Head } from '@inertiajs/react';
-import AuthenticatedLayout from '../../../layouts/authenticated-layout';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Loader2, ArrowLeft, Image as ImageIcon, X, Download } from 'lucide-react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { type User } from '@/types';
+import { Head } from '@inertiajs/react';
+import { Download, Image as ImageIcon, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import AuthenticatedLayout from '../../../layouts/authenticated-layout';
 
 type Props = {
     user: User;
@@ -83,6 +69,7 @@ export default function StokMasukDashboard({ user }: Props) {
         kios_id: '',
         product_id: '',
         quantity: '',
+        satuan: '',
         tanggal: new Date().toISOString().split('T')[0],
         foto_nota: null as File | null,
     });
@@ -94,6 +81,24 @@ export default function StokMasukDashboard({ user }: Props) {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
+
+    // Auto-fill satuan when product_id changes
+    useEffect(() => {
+        if (formData.product_id) {
+            const selectedProduct = products.find((p) => p.id.toString() === formData.product_id);
+            if (selectedProduct) {
+                setFormData((prev) => ({
+                    ...prev,
+                    satuan: selectedProduct.satuan || '',
+                }));
+            }
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                satuan: '',
+            }));
+        }
+    }, [formData.product_id, products]);
 
     // Helper untuk mendapatkan CSRF token
     const getCsrfToken = (): string => {
@@ -131,7 +136,7 @@ export default function StokMasukDashboard({ user }: Props) {
             if (month && month !== 'all') {
                 params.append('month', month);
             }
-            
+
             const csrfToken = getCsrfToken();
             const response = await fetch(`/api/stock-masuk?${params.toString()}`, {
                 method: 'GET',
@@ -179,7 +184,6 @@ export default function StokMasukDashboard({ user }: Props) {
             setLoading(false);
         }
     };
-
 
     // Fetch kios
     const fetchKios = async () => {
@@ -250,10 +254,7 @@ export default function StokMasukDashboard({ user }: Props) {
     };
 
     useEffect(() => {
-        fetchStockMasuk(
-            selectedMonth === 'all' ? undefined : selectedMonth,
-            selectedKios === 'all' ? undefined : selectedKios
-        );
+        fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
         fetchKios();
         fetchProducts();
     }, [selectedMonth, selectedKios]);
@@ -275,7 +276,7 @@ export default function StokMasukDashboard({ user }: Props) {
                 params.append('month', selectedMonth);
             }
             params.append('download', '1');
-            
+
             const response = await fetch(`/api/stock-masuk/download?${params.toString()}`, {
                 method: 'GET',
                 headers: {
@@ -322,13 +323,16 @@ export default function StokMasukDashboard({ user }: Props) {
     };
 
     // Group products by nama
-    const groupedProducts = products.reduce((acc, product) => {
-        if (!acc[product.nama]) {
-            acc[product.nama] = [];
-        }
-        acc[product.nama].push(product);
-        return acc;
-    }, {} as Record<string, Product[]>);
+    const groupedProducts = products.reduce(
+        (acc, product) => {
+            if (!acc[product.nama]) {
+                acc[product.nama] = [];
+            }
+            acc[product.nama].push(product);
+            return acc;
+        },
+        {} as Record<string, Product[]>,
+    );
 
     // Flatten for table display - show all rows with full information
     const tableRows: Array<{
@@ -470,6 +474,7 @@ export default function StokMasukDashboard({ user }: Props) {
                     kios_id: '',
                     product_id: '',
                     quantity: '',
+                    satuan: '',
                     tanggal: new Date().toISOString().split('T')[0],
                     foto_nota: null,
                 });
@@ -477,10 +482,7 @@ export default function StokMasukDashboard({ user }: Props) {
                 setFieldErrors({});
                 setSelectedStockMasuk(null);
                 setError(null);
-                await fetchStockMasuk(
-                    selectedMonth === 'all' ? undefined : selectedMonth,
-                    selectedKios === 'all' ? undefined : selectedKios
-                );
+                await fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
             } else {
                 throw new Error(result.message || 'Gagal menyimpan data');
             }
@@ -542,10 +544,7 @@ export default function StokMasukDashboard({ user }: Props) {
                 setIsDeleteDialogOpen(false);
                 setDeleteId(null);
                 setError(null);
-                await fetchStockMasuk(
-                    selectedMonth === 'all' ? undefined : selectedMonth,
-                    selectedKios === 'all' ? undefined : selectedKios
-                );
+                await fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
             } else {
                 throw new Error(result.message || 'Gagal menghapus data');
             }
@@ -564,6 +563,7 @@ export default function StokMasukDashboard({ user }: Props) {
             kios_id: item.kios_id.toString(),
             product_id: item.product_id.toString(),
             quantity: item.quantity.toString(),
+            satuan: item.product.satuan || '',
             tanggal: item.tanggal.split('T')[0],
             foto_nota: null,
         });
@@ -584,6 +584,7 @@ export default function StokMasukDashboard({ user }: Props) {
             kios_id: '',
             product_id: '',
             quantity: '',
+            satuan: '',
             tanggal: new Date().toISOString().split('T')[0],
             foto_nota: null,
         });
@@ -620,27 +621,21 @@ export default function StokMasukDashboard({ user }: Props) {
             <Head title="Stock Masuk" />
 
             <AuthenticatedLayout>
-                <div className="rounded-md bg-white p-4 shadow-md dark:bg-gray-800 md:p-6">
+                <div className="rounded-md bg-white p-4 shadow-md md:p-6 dark:bg-gray-800">
                     <div className="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-center md:justify-between">
                         <div>
                             <h1 className="text-xl font-semibold md:text-2xl">Stock Masuk</h1>
-                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                                Kelola dan catat barang masuk ke gudang.
-                            </p>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Kelola dan catat barang masuk ke gudang.</p>
                         </div>
                         {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                            <Button onClick={handleAddNew} className="flex items-center gap-2 cursor-pointer w-full sm:w-auto">
+                            <Button onClick={handleAddNew} className="flex w-full cursor-pointer items-center gap-2 sm:w-auto">
                                 <Plus className="h-4 w-4" />
                                 Tambah Stock Masuk
                             </Button>
                         )}
                     </div>
 
-                    {error && (
-                        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                            {error}
-                        </div>
-                    )}
+                    {error && <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
                     {/* Filter */}
                     <Card className="mb-4 p-4">
@@ -676,11 +671,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button
-                                variant="outline"
-                                onClick={handleDownload}
-                                className="flex items-center gap-2 w-full sm:w-auto cursor-pointer"
-                            >
+                            <Button variant="outline" onClick={handleDownload} className="flex w-full cursor-pointer items-center gap-2 sm:w-auto">
                                 <Download className="h-4 w-4" />
                                 Download Excel
                             </Button>
@@ -692,114 +683,109 @@ export default function StokMasukDashboard({ user }: Props) {
                             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                         </div>
                     ) : (
-                        <div className="overflow-x-auto -mx-4 md:mx-0">
+                        <div className="-mx-4 overflow-x-auto md:mx-0">
                             <div className="inline-block min-w-full align-middle">
                                 <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="min-w-[150px]">NAMA FA</TableHead>
-                                        <TableHead className="min-w-[150px]">NAMA KIOS</TableHead>
-                                        <TableHead className="min-w-[200px]">BARANG MASUK</TableHead>
-                                        <TableHead className="min-w-[120px]">JUMLAH (PCS)</TableHead>
-                                        <TableHead className="min-w-[150px]">TANGGAL BARANG MASUK</TableHead>
-                                        <TableHead className="min-w-[150px]">FOTO NOTA</TableHead>
-                                        {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                            <TableHead className="min-w-[100px]">Aksi</TableHead>
-                                        )}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {tableRows.map((row, index) => (
-                                        <TableRow key={row.item.id}>
-                                            <TableCell className="align-top font-medium">
-                                                {row.item.user.name}
-                                            </TableCell>
-                                            <TableCell className="align-top">
-                                                {row.item.kios.nama}
-                                            </TableCell>
-                                            <TableCell className="align-top">
-                                                <div>
-                                                    <div className="font-medium">{row.item.product.nama}</div>
-                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                        {row.item.product.kemasan}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="align-top">{row.item.quantity}</TableCell>
-                                            <TableCell className="align-top">
-                                                {new Date(row.item.tanggal).toLocaleDateString('id-ID', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
-                                            </TableCell>
-                                            <TableCell className="align-top">
-                                                {row.item.foto_nota ? (
-                                                    <button
-                                                        onClick={() => {
-                                                            setPreviewImageUrl(`/storage/${row.item.foto_nota}`);
-                                                            setIsImagePreviewOpen(true);
-                                                        }}
-                                                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 cursor-pointer"
-                                                    >
-                                                        <ImageIcon className="h-4 w-4" />
-                                                        Lihat Foto
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </TableCell>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="min-w-[150px]">NAMA FA</TableHead>
+                                            <TableHead className="min-w-[150px]">NAMA KIOS</TableHead>
+                                            <TableHead className="min-w-[200px]">BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[120px]">QUANTUM (PCS)</TableHead>
+                                            <TableHead className="min-w-[100px]">SATUAN</TableHead>
+                                            <TableHead className="min-w-[150px]">TANGGAL BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[150px]">FOTO NOTA</TableHead>
                                             {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                                <TableCell className="align-top">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleEdit(row.item)}
-                                                            className="h-8 w-8 p-0 cursor-pointer"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                setDeleteId(row.item.id);
-                                                                setIsDeleteDialogOpen(true);
-                                                            }}
-                                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 cursor-pointer"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                                                <TableHead className="min-w-[100px]">Aksi</TableHead>
                                             )}
                                         </TableRow>
-                                    ))}
-                                    {stockMasuk.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') ? 7 : 6} className="text-center py-8 text-gray-500">
-                                                Tidak ada data stock masuk
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {tableRows.map((row, index) => (
+                                            <TableRow key={row.item.id}>
+                                                <TableCell className="align-top font-medium">{row.item.user.name}</TableCell>
+                                                <TableCell className="align-top">{row.item.kios.nama}</TableCell>
+                                                <TableCell className="align-top">
+                                                    <div>
+                                                        <div className="font-medium">{row.item.product.nama}</div>
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">{row.item.product.kemasan}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="align-top">{row.item.quantity}</TableCell>
+                                                <TableCell className="align-top">{row.item.product.satuan || '-'}</TableCell>
+                                                <TableCell className="align-top">
+                                                    {new Date(row.item.tanggal).toLocaleDateString('id-ID', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </TableCell>
+                                                <TableCell className="align-top">
+                                                    {row.item.foto_nota ? (
+                                                        <button
+                                                            onClick={() => {
+                                                                setPreviewImageUrl(`/storage/${row.item.foto_nota}`);
+                                                                setIsImagePreviewOpen(true);
+                                                            }}
+                                                            className="inline-flex cursor-pointer items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                                                        >
+                                                            <ImageIcon className="h-4 w-4" />
+                                                            Lihat Foto
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-gray-400">-</span>
+                                                    )}
+                                                </TableCell>
+                                                {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
+                                                    <TableCell className="align-top">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleEdit(row.item)}
+                                                                className="h-8 w-8 cursor-pointer p-0"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    setDeleteId(row.item.id);
+                                                                    setIsDeleteDialogOpen(true);
+                                                                }}
+                                                                className="h-8 w-8 cursor-pointer p-0 text-red-600 hover:text-red-700"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))}
+                                        {stockMasuk.length === 0 && (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={user.role === 'Field Assistant' || user.role === 'Assistant Area Manager' ? 8 : 7}
+                                                    className="py-8 text-center text-gray-500"
+                                                >
+                                                    Tidak ada data stock masuk
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </div>
                     )}
 
                     {/* Dialog untuk Add/Edit */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-2xl">
                             <DialogHeader>
-                                <DialogTitle>
-                                    {selectedStockMasuk ? 'Edit Stock Masuk' : 'Tambah Stock Masuk'}
-                                </DialogTitle>
+                                <DialogTitle>{selectedStockMasuk ? 'Edit Stock Masuk' : 'Tambah Stock Masuk'}</DialogTitle>
                                 <DialogDescription>
-                                    {selectedStockMasuk
-                                        ? 'Ubah informasi stock masuk di bawah ini.'
-                                        : 'Isi informasi stock masuk di bawah ini.'}
+                                    {selectedStockMasuk ? 'Ubah informasi stock masuk di bawah ini.' : 'Isi informasi stock masuk di bawah ini.'}
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -811,7 +797,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                             type="text"
                                             value={user.name}
                                             readOnly
-                                            className="bg-gray-50 dark:bg-gray-700 cursor-not-allowed"
+                                            className="cursor-not-allowed bg-gray-50 dark:bg-gray-700"
                                         />
                                         <input type="hidden" name="user_id" value={formData.user_id} />
                                     </div>
@@ -826,7 +812,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                     setFieldErrors({ ...fieldErrors, kios_id: '' });
                                                 }
                                             }}
-                                            className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+                                            className={`flex h-9 w-full cursor-pointer rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                                                 fieldErrors.kios_id ? 'border-red-500' : 'border-input'
                                             }`}
                                             required
@@ -838,9 +824,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                 </option>
                                             ))}
                                         </select>
-                                        {fieldErrors.kios_id && (
-                                            <p className="text-sm text-red-500">{fieldErrors.kios_id}</p>
-                                        )}
+                                        {fieldErrors.kios_id && <p className="text-sm text-red-500">{fieldErrors.kios_id}</p>}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -854,7 +838,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                 setFieldErrors({ ...fieldErrors, product_id: '' });
                                             }
                                         }}
-                                        className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+                                        className={`flex h-9 w-full cursor-pointer rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                                             fieldErrors.product_id ? 'border-red-500' : 'border-input'
                                         }`}
                                         required
@@ -866,13 +850,11 @@ export default function StokMasukDashboard({ user }: Props) {
                                             </option>
                                         ))}
                                     </select>
-                                    {fieldErrors.product_id && (
-                                        <p className="text-sm text-red-500">{fieldErrors.product_id}</p>
-                                    )}
+                                    {fieldErrors.product_id && <p className="text-sm text-red-500">{fieldErrors.product_id}</p>}
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="quantity">JUMLAH (PCS) *</Label>
+                                        <Label htmlFor="quantity">QUANTUM (PCS) *</Label>
                                         <Input
                                             id="quantity"
                                             type="number"
@@ -887,52 +869,48 @@ export default function StokMasukDashboard({ user }: Props) {
                                             className={fieldErrors.quantity ? 'border-red-500' : ''}
                                             required
                                         />
-                                        {fieldErrors.quantity && (
-                                            <p className="text-sm text-red-500">{fieldErrors.quantity}</p>
-                                        )}
+                                        {fieldErrors.quantity && <p className="text-sm text-red-500">{fieldErrors.quantity}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="tanggal">TANGGAL BARANG MASUK *</Label>
+                                        <Label htmlFor="satuan">SATUAN</Label>
                                         <Input
-                                            id="tanggal"
-                                            type="date"
-                                            value={formData.tanggal}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, tanggal: e.target.value });
-                                                if (fieldErrors.tanggal) {
-                                                    setFieldErrors({ ...fieldErrors, tanggal: '' });
-                                                }
-                                            }}
-                                            className={fieldErrors.tanggal ? 'border-red-500' : ''}
-                                            required
+                                            id="satuan"
+                                            type="text"
+                                            value={formData.satuan}
+                                            readOnly
+                                            className="cursor-not-allowed bg-gray-50 dark:bg-gray-700"
                                         />
-                                        {fieldErrors.tanggal && (
-                                            <p className="text-sm text-red-500">{fieldErrors.tanggal}</p>
-                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="foto_nota">FOTO NOTA</Label>
+                                    <Label htmlFor="tanggal">TANGGAL BARANG MASUK *</Label>
                                     <Input
-                                        id="foto_nota"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        className="cursor-pointer"
+                                        id="tanggal"
+                                        type="date"
+                                        value={formData.tanggal}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, tanggal: e.target.value });
+                                            if (fieldErrors.tanggal) {
+                                                setFieldErrors({ ...fieldErrors, tanggal: '' });
+                                            }
+                                        }}
+                                        className={fieldErrors.tanggal ? 'border-red-500' : ''}
+                                        required
                                     />
+                                    {fieldErrors.tanggal && <p className="text-sm text-red-500">{fieldErrors.tanggal}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="foto_nota">FOTO NOTA</Label>
+                                    <Input id="foto_nota" type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
                                     {previewImage && (
                                         <div className="relative mt-2 inline-block">
-                                            <img
-                                                src={previewImage}
-                                                alt="Preview"
-                                                className="h-32 w-32 rounded-md object-cover"
-                                            />
+                                            <img src={previewImage} alt="Preview" className="h-32 w-32 rounded-md object-cover" />
                                             <Button
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={handleRemoveImage}
-                                                className="absolute -right-2 -top-2 h-6 w-6 rounded-full p-0"
+                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -970,8 +948,7 @@ export default function StokMasukDashboard({ user }: Props) {
                             <DialogHeader>
                                 <DialogTitle>Hapus Stock Masuk</DialogTitle>
                                 <DialogDescription>
-                                    Apakah Anda yakin ingin menghapus data stock masuk ini? Tindakan ini tidak dapat
-                                    dibatalkan.
+                                    Apakah Anda yakin ingin menghapus data stock masuk ini? Tindakan ini tidak dapat dibatalkan.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -998,7 +975,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                 <DialogTitle>Preview Foto Nota</DialogTitle>
                             </DialogHeader>
                             {previewImageUrl && (
-                                <div className="flex justify-center items-center p-4">
+                                <div className="flex items-center justify-center p-4">
                                     <img
                                         src={previewImageUrl}
                                         alt="Foto Nota"
