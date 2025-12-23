@@ -149,14 +149,6 @@ class ProductController extends Controller
      */
     public function apiStore(Request $request): JsonResponse
     {
-        // Assistant Area Manager hanya bisa melihat, tidak bisa edit
-        if (Auth::user()->role === 'Assistant Area Manager') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki izin untuk menambah data produk.'
-            ], 403);
-        }
-
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'kemasan' => ['required', 'string', 'max:255'],
@@ -180,14 +172,6 @@ class ProductController extends Controller
      */
     public function apiUpdate(Request $request, Product $product): JsonResponse
     {
-        // Assistant Area Manager hanya bisa melihat, tidak bisa edit
-        if (Auth::user()->role === 'Assistant Area Manager') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki izin untuk mengubah data produk.'
-            ], 403);
-        }
-
         if ($product->is_deleted) {
             return response()->json([
                 'success' => false,
@@ -217,14 +201,6 @@ class ProductController extends Controller
      */
     public function apiDestroy(Product $product): JsonResponse
     {
-        // Assistant Area Manager hanya bisa melihat, tidak bisa edit
-        if (Auth::user()->role === 'Assistant Area Manager') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki izin untuk menghapus data produk.'
-            ], 403);
-        }
-
         if ($product->is_deleted) {
             return response()->json([
                 'success' => false,

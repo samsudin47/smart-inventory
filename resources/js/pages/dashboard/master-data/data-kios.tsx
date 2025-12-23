@@ -194,7 +194,7 @@ export default function DataKiosDashboard({ user }: Props) {
                                 Kelola data kios yang terdaftar dalam sistem.
                             </p>
                         </div>
-                        {user.role === 'Field Assistant' && (
+                        {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
                             <Button onClick={openCreateDialog} className="cursor-pointer gap-2 w-full sm:w-auto">
                                 <Plus className="size-4" />
                                 Tambah Kios
@@ -252,7 +252,7 @@ export default function DataKiosDashboard({ user }: Props) {
                                                     {new Date(item.created_at).toLocaleDateString('id-ID')}
                                                 </td>
                                                 <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
-                                                    {user.role === 'Field Assistant' && (
+                                                    {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
                                                         <div className="flex justify-center gap-2">
                                                             <Button
                                                                 variant="outline"
