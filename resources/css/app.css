@@ -147,6 +147,8 @@
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
+    /* Fallback untuk memastikan background tetap ada */
+    background-color: #000000;
 }
 
 /* Optimize for mobile devices */
