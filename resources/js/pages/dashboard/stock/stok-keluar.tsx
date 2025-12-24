@@ -116,7 +116,7 @@ export default function StokKeluarDashboard({ user }: Props) {
         for (let i = 0; i < 12; i++) {
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthName = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            const monthName = date.toLocaleDateString('id-ID', { month: 'long' });
             monthsList.push({ value: monthKey, label: monthName });
         }
         return monthsList;
@@ -142,10 +142,7 @@ export default function StokKeluarDashboard({ user }: Props) {
             date.setDate(date.getDate() - i);
             const dateKey = date.toISOString().split('T')[0];
             const day = date.getDate();
-            const month = date.toLocaleDateString('id-ID', { month: 'long' });
-            const year = date.getFullYear();
-            const dateLabel = `${day} ${month} ${year}`;
-            datesList.push({ value: dateKey, label: dateLabel });
+            datesList.push({ value: dateKey, label: day.toString() });
         }
         return datesList;
     }, []);
@@ -715,7 +712,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                             <div className="flex-1">
                                 <Label htmlFor="kios">Filter Kios</Label>
-                                <Select value={selectedKios} onValueChange={setSelectedKios}>
+                                <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
                                     <SelectTrigger id="kios">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
@@ -731,7 +728,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                             </div>
                             <div className="flex-1">
                                 <Label htmlFor="date">Filter Tanggal</Label>
-                                <Select value={selectedDate} onValueChange={setSelectedDate}>
+                                <Select value={selectedDate} onValueChange={(value) => setSelectedDate(value)}>
                                     <SelectTrigger id="date">
                                         <SelectValue placeholder="Pilih Tanggal" />
                                     </SelectTrigger>
@@ -746,7 +743,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                             </div>
                             <div className="flex-1">
                                 <Label htmlFor="month">Filter Bulan</Label>
-                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
                                     <SelectTrigger id="month">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
@@ -761,7 +758,7 @@ export default function StokKeluarDashboard({ user }: Props) {
                             </div>
                             <div className="flex-1">
                                 <Label htmlFor="year">Filter Tahun</Label>
-                                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                <Select value={selectedYear} onValueChange={(value) => setSelectedYear(value)}>
                                     <SelectTrigger id="year">
                                         <SelectValue placeholder="Pilih Tahun" />
                                     </SelectTrigger>

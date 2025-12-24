@@ -312,7 +312,7 @@ export default function StokTersediaDashboard({ user }: Props) {
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                             <div className="flex-1">
                                 <Label htmlFor="kios">Filter Kios</Label>
-                                <Select value={selectedKios} onValueChange={setSelectedKios}>
+                                <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
                                     <SelectTrigger id="kios">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
@@ -328,7 +328,7 @@ export default function StokTersediaDashboard({ user }: Props) {
                             </div>
                             <div className="flex-1">
                                 <Label htmlFor="month">Filter Bulan</Label>
-                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
                                     <SelectTrigger id="month">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
