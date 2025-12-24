@@ -541,21 +541,26 @@ export default function StokKeluarDashboard({ user }: Props) {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                // Handle validation errors
-                if (errorData.errors) {
+                
+                // Handle validation errors (422)
+                if (response.status === 422 || errorData.errors) {
                     const errors: Record<string, string> = {};
-                    Object.keys(errorData.errors).forEach((key) => {
-                        const errorMessages = errorData.errors[key];
-                        errors[key] = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages;
-                    });
+                    if (errorData.errors) {
+                        Object.keys(errorData.errors).forEach((key) => {
+                            const errorMessages = errorData.errors[key];
+                            errors[key] = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages;
+                        });
+                    }
                     setFieldErrors(errors);
-                    const errorMessages = Object.values(errorData.errors).flat();
-                    setError(errorMessages.join(', ') || errorData.message || 'Gagal menyimpan data');
+                    const errorMessages = errorData.errors 
+                        ? Object.values(errorData.errors).flat().join(', ')
+                        : errorData.message || 'Data yang dimasukkan tidak valid. Silakan periksa kembali.';
+                    setError(errorMessages);
                 } else {
-                    setError(errorData.message || 'Gagal menyimpan data. Silakan coba lagi.');
+                    setError(errorData.message || `Gagal menyimpan data (${response.status}). Silakan coba lagi.`);
                 }
                 setIsSubmitting(false);
-                    return;
+                return;
             }
 
             const result: ApiResponse<StockKeluar> = await response.json();
@@ -584,7 +589,10 @@ export default function StokKeluarDashboard({ user }: Props) {
             } else {
             setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan');
             }
-            console.error('Error saving stock keluar:', err);
+            // Log error hanya di development
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error saving stock keluar:', err);
+            }
         } finally {
             setIsSubmitting(false);
         }

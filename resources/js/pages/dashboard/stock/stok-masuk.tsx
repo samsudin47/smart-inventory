@@ -1082,7 +1082,7 @@ export default function StokMasukDashboard({ user }: Props) {
 
                     {/* Dialog untuk Preview Foto */}
                     <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
-                        <DialogContent className="max-w-[95vw] sm:max-w-7xl">
+                        <DialogContent className="max-w-[90vw] sm:max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle>Preview Foto Nota</DialogTitle>
                                 <DialogDescription>
@@ -1090,7 +1090,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                 </DialogDescription>
                             </DialogHeader>
                             {previewImageUrl && (
-                                <div className="flex items-center justify-center p-4 min-h-[200px]">
+                                <div className="flex items-center justify-center p-4 min-h-[200px] max-h-[70vh] overflow-auto">
                                     {imageLoadError ? (
                                         <div className="text-center p-8 text-muted-foreground">
                                             <p>Gambar tidak dapat dimuat</p>
@@ -1100,7 +1100,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                         <img
                                             src={previewImageUrl}
                                             alt="Foto Nota"
-                                            className="max-h-[85vh] max-w-full rounded-md object-contain shadow-lg"
+                                            className="max-h-[60vh] max-w-full rounded-md object-contain shadow-lg"
                                             onError={(e) => {
                                                 // Prevent infinite loop by checking if error has already been handled
                                                 if (!imageErrorHandled.current) {

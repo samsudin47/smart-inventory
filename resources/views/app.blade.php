@@ -18,6 +18,18 @@
                     }
                 }
             })();
+
+            // Suppress feature_collector warnings (usually from browser extensions)
+            if (typeof window !== 'undefined') {
+                const originalWarn = console.warn;
+                console.warn = function(...args) {
+                    const message = args.join(' ');
+                    if (message.includes('feature_collector') || message.includes('deprecated parameters')) {
+                        return; // Suppress these warnings
+                    }
+                    originalWarn.apply(console, args);
+                };
+            }
         </script>
 
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}

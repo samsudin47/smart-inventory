@@ -133,13 +133,21 @@ class StockKeluarController extends Controller
      */
     public function apiStore(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
-            'kios_id' => ['required', 'exists:master_kios,id'],
-            'product_id' => ['required', 'exists:product,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:999999'], // Max value to prevent overflow
-            'tanggal' => ['required', 'date', 'before_or_equal:today'], // Cannot be in the future
-        ]);
+        try {
+            $validated = $request->validate([
+                'user_id' => ['required', 'exists:users,id'],
+                'kios_id' => ['required', 'exists:master_kios,id'],
+                'product_id' => ['required', 'exists:product,id'],
+                'quantity' => ['required', 'integer', 'min:1', 'max:999999'], // Max value to prevent overflow
+                'tanggal' => ['required', 'date', 'before_or_equal:today'], // Cannot be in the future
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data yang dimasukkan tidak valid.',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         // Field Assistant hanya bisa membuat stock keluar untuk diri mereka sendiri
         $userId = Auth::id();
@@ -184,11 +192,13 @@ class StockKeluarController extends Controller
         $stockTersedia = max(0, $totalMasuk - $totalKeluar);
 
         if ($stockTersedia < $validated['quantity']) {
-            throw ValidationException::withMessages([
-                'quantity' => [
-                    "Stock tidak mencukupi. Sisa stock tersedia: {$stockTersedia} pcs"
+            return response()->json([
+                'success' => false,
+                'message' => "Stock tidak mencukupi. Sisa stock tersedia: {$stockTersedia} pcs",
+                'errors' => [
+                    'quantity' => ["Stock tidak mencukupi. Sisa stock tersedia: {$stockTersedia} pcs"]
                 ]
-            ]);
+            ], 422);
         }
 
         $validated['created_by'] = Auth::id();
