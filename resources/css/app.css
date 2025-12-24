@@ -147,8 +147,11 @@
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
-    /* Fallback untuk memastikan background tetap ada */
-    background-color: #000000;
+}
+
+/* Dark mode support for auth background */
+.dark .auth-background {
+    opacity: 0.2;
 }
 
 /* Optimize for mobile devices */

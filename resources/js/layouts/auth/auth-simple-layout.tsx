@@ -11,18 +11,23 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
-        <div
-            className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10"
-            style={{
-                backgroundImage: 'url(/public/smart-inventory.PNG)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                minHeight: '100vh',
-                backgroundColor: '#000000',
-            }}
-        >
-            <div className="w-full max-w-sm">
+        <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 bg-background">
+            {/* Background Image Layer */}
+            <div
+                className="absolute inset-0 opacity-30 dark:opacity-20"
+                style={{
+                    backgroundImage: 'url(/public/smart-inventory.PNG)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                }}
+            />
+            
+            {/* Dark Mode Overlay */}
+            <div className="absolute inset-0 bg-background/50 dark:bg-background/80" />
+            
+            {/* Content Layer */}
+            <div className="relative z-10 w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
                         <Link href={home()} className="flex flex-col items-center gap-2 font-medium">
