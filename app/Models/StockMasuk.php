@@ -87,7 +87,23 @@ class StockMasuk extends Model
 
         // Use Storage::url() to get the correct URL
         // This will use the 'url' config from filesystems.php
-        return Storage::disk('public')->url($this->foto_nota);
+        $url = Storage::disk('public')->url($this->foto_nota);
+        
+        // Normalize URL to remove double slashes (except after protocol like http:// or https://)
+        // Split by :// to preserve protocol, then normalize path
+        $parts = explode('://', $url, 2);
+        if (count($parts) === 2) {
+            $protocol = $parts[0];
+            $path = $parts[1];
+            // Remove multiple consecutive slashes in path
+            $path = preg_replace('#/{2,}#', '/', $path);
+            $url = $protocol . '://' . $path;
+        } else {
+            // If no protocol, just normalize slashes
+            $url = preg_replace('#/{2,}#', '/', $url);
+        }
+        
+        return $url;
     }
 }
 

@@ -728,7 +728,21 @@ export default function StokMasukDashboard({ user }: Props) {
                                                     {row.item.foto_nota_url || row.item.foto_nota ? (
                                                         <button
                                                             onClick={() => {
-                                                                setPreviewImageUrl(row.item.foto_nota_url || `/storage/${row.item.foto_nota}`);
+                                                                // Normalize URL to remove double slashes
+                                                                let imageUrl = row.item.foto_nota_url || `/storage/${row.item.foto_nota}`;
+                                                                
+                                                                // Normalize URL: split by :// to preserve protocol, then normalize path
+                                                                const urlParts = imageUrl.split('://');
+                                                                if (urlParts.length === 2) {
+                                                                    const protocol = urlParts[0];
+                                                                    const path = urlParts[1].replace(/\/{2,}/g, '/');
+                                                                    imageUrl = `${protocol}://${path}`;
+                                                                } else {
+                                                                    // If no protocol, just normalize slashes
+                                                                    imageUrl = imageUrl.replace(/\/{2,}/g, '/');
+                                                                }
+                                                                
+                                                                setPreviewImageUrl(imageUrl);
                                                                 setIsImagePreviewOpen(true);
                                                             }}
                                                             className="inline-flex cursor-pointer items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400"
@@ -977,6 +991,9 @@ export default function StokMasukDashboard({ user }: Props) {
                         <DialogContent className="max-w-[95vw] sm:max-w-7xl">
                             <DialogHeader>
                                 <DialogTitle>Preview Foto Nota</DialogTitle>
+                                <DialogDescription>
+                                    Preview foto nota untuk stock masuk
+                                </DialogDescription>
                             </DialogHeader>
                             {previewImageUrl && (
                                 <div className="flex items-center justify-center p-4">
@@ -984,6 +1001,10 @@ export default function StokMasukDashboard({ user }: Props) {
                                         src={previewImageUrl}
                                         alt="Foto Nota"
                                         className="max-h-[85vh] max-w-full rounded-md object-contain shadow-lg"
+                                        onError={(e) => {
+                                            console.error('Error loading image:', previewImageUrl);
+                                            e.currentTarget.src = '/placeholder-image.png';
+                                        }}
                                     />
                                 </div>
                             )}
