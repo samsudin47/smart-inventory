@@ -14,17 +14,17 @@ export default function AuthSimpleLayout({ children, title, description }: Props
         <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 bg-background">
             {/* Background Image Layer */}
             <div
-                className="absolute inset-0 opacity-30 dark:opacity-20"
+                className="absolute inset-0 opacity-30 dark:opacity-50"
                 style={{
                     backgroundImage: 'url(/public/smart-inventory.PNG)',
-                    backgroundSize: 'cover',
+                    backgroundSize: '60%',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
                 }}
             />
             
             {/* Dark Mode Overlay */}
-            <div className="absolute inset-0 bg-background/50 dark:bg-background/80" />
+            <div className="absolute inset-0 bg-background/50 dark:bg-background/60" />
             
             {/* Content Layer */}
             <div className="relative z-10 w-full max-w-sm">
