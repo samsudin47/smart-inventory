@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { type User } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Download, Image as ImageIcon, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AuthenticatedLayout from '../../../layouts/authenticated-layout';
 
 type Props = {
@@ -79,6 +79,8 @@ export default function StokMasukDashboard({ user }: Props) {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [imageLoadError, setImageLoadError] = useState(false);
+    const imageErrorHandled = useRef(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
@@ -743,6 +745,8 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                 }
                                                                 
                                                                 setPreviewImageUrl(imageUrl);
+                                                                setImageLoadError(false);
+                                                                imageErrorHandled.current = false;
                                                                 setIsImagePreviewOpen(true);
                                                             }}
                                                             className="inline-flex cursor-pointer items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400"
@@ -996,16 +1000,29 @@ export default function StokMasukDashboard({ user }: Props) {
                                 </DialogDescription>
                             </DialogHeader>
                             {previewImageUrl && (
-                                <div className="flex items-center justify-center p-4">
-                                    <img
-                                        src={previewImageUrl}
-                                        alt="Foto Nota"
-                                        className="max-h-[85vh] max-w-full rounded-md object-contain shadow-lg"
-                                        onError={(e) => {
-                                            console.error('Error loading image:', previewImageUrl);
-                                            e.currentTarget.src = '/placeholder-image.png';
-                                        }}
-                                    />
+                                <div className="flex items-center justify-center p-4 min-h-[200px]">
+                                    {imageLoadError ? (
+                                        <div className="text-center p-8 text-muted-foreground">
+                                            <p>Gambar tidak dapat dimuat</p>
+                                            <p className="text-sm mt-2">URL: {previewImageUrl}</p>
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={previewImageUrl}
+                                            alt="Foto Nota"
+                                            className="max-h-[85vh] max-w-full rounded-md object-contain shadow-lg"
+                                            onError={(e) => {
+                                                // Prevent infinite loop by checking if error has already been handled
+                                                if (!imageErrorHandled.current) {
+                                                    imageErrorHandled.current = true;
+                                                    console.error('Error loading image:', previewImageUrl);
+                                                    setImageLoadError(true);
+                                                    // Stop the image from trying to load again
+                                                    e.currentTarget.style.display = 'none';
+                                                }
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             )}
                             <DialogFooter>
@@ -1014,6 +1031,8 @@ export default function StokMasukDashboard({ user }: Props) {
                                     onClick={() => {
                                         setIsImagePreviewOpen(false);
                                         setPreviewImageUrl(null);
+                                        setImageLoadError(false);
+                                        imageErrorHandled.current = false;
                                     }}
                                     className="cursor-pointer"
                                 >
