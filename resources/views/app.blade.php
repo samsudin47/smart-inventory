@@ -19,15 +19,43 @@
                 }
             })();
 
-            // Suppress feature_collector warnings (usually from browser extensions)
+            // Suppress feature_collector warnings and 422 errors (usually from browser extensions)
             if (typeof window !== 'undefined') {
+                // Suppress console.warn for feature_collector
                 const originalWarn = console.warn;
                 console.warn = function(...args) {
                     const message = args.join(' ');
-                    if (message.includes('feature_collector') || message.includes('deprecated parameters')) {
+                    if (message.includes('feature_collector') || 
+                        message.includes('deprecated parameters') ||
+                        message.includes('using deprecated') ||
+                        message.includes('deprecated')) {
                         return; // Suppress these warnings
                     }
                     originalWarn.apply(console, args);
+                };
+
+                // Suppress console.error for handled 422 validation errors
+                const originalError = console.error;
+                console.error = function(...args) {
+                    const message = args.join(' ');
+                    // Suppress 422 errors that are handled in UI
+                    if (message.includes('422') || 
+                        (message.includes('Unprocessable Content') && message.includes('POST')) ||
+                        message.includes('api/stock-keluar') ||
+                        message.includes('api/stock-masuk')) {
+                        return; // Suppress handled validation errors
+                    }
+                    originalError.apply(console, args);
+                };
+
+                // Suppress network errors for 422 in console
+                const originalLog = console.log;
+                console.log = function(...args) {
+                    const message = args.join(' ');
+                    if (message.includes('422') && message.includes('POST')) {
+                        return; // Suppress 422 POST errors
+                    }
+                    originalLog.apply(console, args);
                 };
             }
         </script>

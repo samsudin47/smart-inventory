@@ -500,15 +500,20 @@ export default function StokKeluarDashboard({ user }: Props) {
                     const errorData = await retryResponse.json().catch(() => ({}));
                     if (retryResponse.status === 419) {
                         setError('Session telah berakhir. Silakan refresh halaman dan login kembali.');
-                    } else if (errorData.errors) {
+                    } else if (retryResponse.status === 422 || errorData.errors) {
+                        // Handle validation errors (422) - don't log to console
                         const errors: Record<string, string> = {};
-                        Object.keys(errorData.errors).forEach((key) => {
-                            const errorMessages = errorData.errors[key];
-                            errors[key] = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages;
-                        });
+                        if (errorData.errors) {
+                            Object.keys(errorData.errors).forEach((key) => {
+                                const errorMessages = errorData.errors[key];
+                                errors[key] = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages;
+                            });
+                        }
                         setFieldErrors(errors);
-                        const errorMessages = Object.values(errorData.errors).flat();
-                        setError(errorMessages.join(', ') || errorData.message || 'Gagal menyimpan data');
+                        const errorMessages = errorData.errors 
+                            ? Object.values(errorData.errors).flat().join(', ')
+                            : errorData.message || 'Data yang dimasukkan tidak valid. Silakan periksa kembali.';
+                        setError(errorMessages);
                     } else {
                         setError(errorData.message || 'Gagal menyimpan data. Silakan coba lagi.');
                     }
@@ -542,7 +547,7 @@ export default function StokKeluarDashboard({ user }: Props) {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 
-                // Handle validation errors (422)
+                // Handle validation errors (422) - don't log to console as it's handled in UI
                 if (response.status === 422 || errorData.errors) {
                     const errors: Record<string, string> = {};
                     if (errorData.errors) {
@@ -556,8 +561,15 @@ export default function StokKeluarDashboard({ user }: Props) {
                         ? Object.values(errorData.errors).flat().join(', ')
                         : errorData.message || 'Data yang dimasukkan tidak valid. Silakan periksa kembali.';
                     setError(errorMessages);
+                    // Don't log 422 errors to console as they're validation errors handled in UI
+                    setIsSubmitting(false);
+                    return;
                 } else {
                     setError(errorData.message || `Gagal menyimpan data (${response.status}). Silakan coba lagi.`);
+                    // Only log non-422 errors in development
+                    if (process.env.NODE_ENV === 'development' && response.status !== 422) {
+                        console.error('Error saving stock keluar:', errorData);
+                    }
                 }
                 setIsSubmitting(false);
                 return;
@@ -587,12 +599,9 @@ export default function StokKeluarDashboard({ user }: Props) {
             if (err instanceof TypeError && err.message.includes('fetch')) {
                 setError('Gagal terhubung ke server. Periksa koneksi internet Anda.');
             } else {
-            setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan');
+                setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan');
             }
-            // Log error hanya di development
-            if (process.env.NODE_ENV === 'development') {
-                console.error('Error saving stock keluar:', err);
-            }
+            // Don't log errors to console - they're handled in UI
         } finally {
             setIsSubmitting(false);
         }
