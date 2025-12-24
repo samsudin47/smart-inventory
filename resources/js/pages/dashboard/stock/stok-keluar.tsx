@@ -141,11 +141,10 @@ export default function StokKeluarDashboard({ user }: Props) {
             const date = new Date(currentDate);
             date.setDate(date.getDate() - i);
             const dateKey = date.toISOString().split('T')[0];
-            const dateLabel = date.toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-            });
+            const day = date.getDate();
+            const month = date.toLocaleDateString('id-ID', { month: 'long' });
+            const year = date.getFullYear();
+            const dateLabel = `${day} ${month} ${year}`;
             datesList.push({ value: dateKey, label: dateLabel });
         }
         return datesList;
@@ -827,11 +826,13 @@ export default function StokKeluarDashboard({ user }: Props) {
                                             <TableCell className="align-top">{row.item.quantity}</TableCell>
                                             <TableCell className="align-top">{row.item.product.satuan || '-'}</TableCell>
                                             <TableCell className="align-top">
-                                                {new Date(row.item.tanggal).toLocaleDateString('id-ID', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
+                                                {(() => {
+                                                    const date = new Date(row.item.tanggal);
+                                                    const day = date.getDate();
+                                                    const month = date.toLocaleDateString('id-ID', { month: 'long' });
+                                                    const year = date.getFullYear();
+                                                    return `${day} ${month} ${year}`;
+                                                })()}
                                             </TableCell>
                                             {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
                                                 <TableCell className="align-top">
