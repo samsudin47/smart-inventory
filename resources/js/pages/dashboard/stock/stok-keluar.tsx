@@ -90,6 +90,8 @@ export default function StokKeluarDashboard({ user }: Props) {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
+    const [selectedDate, setSelectedDate] = useState<string>('all');
+    const [selectedYear, setSelectedYear] = useState<string>('all');
 
     // Helper untuk mendapatkan CSRF token dengan validasi
     const getCsrfToken = useCallback(() => {
@@ -120,8 +122,37 @@ export default function StokKeluarDashboard({ user }: Props) {
         return monthsList;
     }, []);
 
+    // Generate years for select
+    const years = useMemo(() => {
+        const yearsList = [{ value: 'all', label: 'Semua Tahun' }];
+        const currentYear = new Date().getFullYear();
+        for (let i = 0; i < 5; i++) {
+            const year = currentYear - i;
+            yearsList.push({ value: year.toString(), label: year.toString() });
+        }
+        return yearsList;
+    }, []);
+
+    // Generate dates for select (last 30 days)
+    const dates = useMemo(() => {
+        const datesList = [{ value: 'all', label: 'Semua Tanggal' }];
+        const currentDate = new Date();
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() - i);
+            const dateKey = date.toISOString().split('T')[0];
+            const dateLabel = date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+            datesList.push({ value: dateKey, label: dateLabel });
+        }
+        return datesList;
+    }, []);
+
     // Fetch data dari API dengan error handling yang lebih baik
-    const fetchStockKeluar = useCallback(async (month?: string, kiosId?: string) => {
+    const fetchStockKeluar = useCallback(async (month?: string, kiosId?: string, date?: string, year?: string) => {
         try {
             setLoading(true);
             setError(null);
@@ -131,6 +162,12 @@ export default function StokKeluarDashboard({ user }: Props) {
             }
             if (month && month !== 'all') {
                 params.append('month', month);
+            }
+            if (date && date !== 'all') {
+                params.append('date', date);
+            }
+            if (year && year !== 'all') {
+                params.append('year', year);
             }
             const response = await fetch(`/api/stock-keluar?${params.toString()}`, {
                 method: 'GET',
@@ -220,12 +257,14 @@ export default function StokKeluarDashboard({ user }: Props) {
         const timeoutId = setTimeout(() => {
         fetchStockKeluar(
             selectedMonth === 'all' ? undefined : selectedMonth,
-            selectedKios === 'all' ? undefined : selectedKios
+            selectedKios === 'all' ? undefined : selectedKios,
+            selectedDate === 'all' ? undefined : selectedDate,
+            selectedYear === 'all' ? undefined : selectedYear
         );
         }, 300); // Debounce 300ms
 
         return () => clearTimeout(timeoutId);
-    }, [selectedMonth, selectedKios, fetchStockKeluar]);
+    }, [selectedMonth, selectedKios, selectedDate, selectedYear, fetchStockKeluar]);
 
     // Fetch initial data
     useEffect(() => {
@@ -266,6 +305,12 @@ export default function StokKeluarDashboard({ user }: Props) {
             }
             if (selectedMonth && selectedMonth !== 'all') {
                 params.append('month', selectedMonth);
+            }
+            if (selectedDate && selectedDate !== 'all') {
+                params.append('date', selectedDate);
+            }
+            if (selectedYear && selectedYear !== 'all') {
+                params.append('year', selectedYear);
             }
             params.append('download', '1');
             
@@ -489,7 +534,9 @@ export default function StokKeluarDashboard({ user }: Props) {
                     setSelectedStockKeluar(null);
                     await fetchStockKeluar(
                         selectedMonth === 'all' ? undefined : selectedMonth,
-                        selectedKios === 'all' ? undefined : selectedKios
+                        selectedKios === 'all' ? undefined : selectedKios,
+                        selectedDate === 'all' ? undefined : selectedDate,
+                        selectedYear === 'all' ? undefined : selectedYear
                     );
                 }
                 setIsSubmitting(false);
@@ -530,7 +577,9 @@ export default function StokKeluarDashboard({ user }: Props) {
                 setSelectedStockKeluar(null);
                 await fetchStockKeluar(
                     selectedMonth === 'all' ? undefined : selectedMonth,
-                    selectedKios === 'all' ? undefined : selectedKios
+                    selectedKios === 'all' ? undefined : selectedKios,
+                    selectedDate === 'all' ? undefined : selectedDate,
+                    selectedYear === 'all' ? undefined : selectedYear
                 );
             }
         } catch (err) {
@@ -543,7 +592,7 @@ export default function StokKeluarDashboard({ user }: Props) {
         } finally {
             setIsSubmitting(false);
         }
-    }, [formData, selectedStockKeluar, user.id, validateForm, getCsrfToken, refreshCsrfToken, fetchStockKeluar, selectedMonth, selectedKios]);
+    }, [formData, selectedStockKeluar, user.id, validateForm, getCsrfToken, refreshCsrfToken, fetchStockKeluar, selectedMonth, selectedKios, selectedDate, selectedYear]);
 
     // Handle delete dengan CSRF token handling
     const handleDelete = useCallback(async () => {
@@ -585,14 +634,16 @@ export default function StokKeluarDashboard({ user }: Props) {
                 setDeleteId(null);
                 await fetchStockKeluar(
                     selectedMonth === 'all' ? undefined : selectedMonth,
-                    selectedKios === 'all' ? undefined : selectedKios
+                    selectedKios === 'all' ? undefined : selectedKios,
+                    selectedDate === 'all' ? undefined : selectedDate,
+                    selectedYear === 'all' ? undefined : selectedYear
                 );
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus');
             console.error('Error deleting stock keluar:', err);
         }
-    }, [deleteId, getCsrfToken, fetchStockKeluar, selectedMonth, selectedKios]);
+    }, [deleteId, getCsrfToken, fetchStockKeluar, selectedMonth, selectedKios, selectedDate, selectedYear]);
 
     // Handle edit dengan useCallback untuk performa
     const handleEdit = useCallback((item: StockKeluar) => {
@@ -669,11 +720,26 @@ export default function StokKeluarDashboard({ user }: Props) {
                                     <SelectTrigger id="kios">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent side="bottom">
                                         <SelectItem value="all">Semua Kios</SelectItem>
                                         {kios.map((k) => (
                                             <SelectItem key={k.id} value={k.id.toString()}>
                                                 {k.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1">
+                                <Label htmlFor="date">Filter Tanggal</Label>
+                                <Select value={selectedDate} onValueChange={setSelectedDate}>
+                                    <SelectTrigger id="date">
+                                        <SelectValue placeholder="Pilih Tanggal" />
+                                    </SelectTrigger>
+                                    <SelectContent side="bottom">
+                                        {dates.map((date) => (
+                                            <SelectItem key={date.value} value={date.value}>
+                                                {date.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -685,10 +751,25 @@ export default function StokKeluarDashboard({ user }: Props) {
                                     <SelectTrigger id="month">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent side="bottom">
                                         {months.map((month) => (
                                             <SelectItem key={month.value} value={month.value}>
                                                 {month.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1">
+                                <Label htmlFor="year">Filter Tahun</Label>
+                                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                    <SelectTrigger id="year">
+                                        <SelectValue placeholder="Pilih Tahun" />
+                                    </SelectTrigger>
+                                    <SelectContent side="bottom">
+                                        {years.map((year) => (
+                                            <SelectItem key={year.value} value={year.value}>
+                                                {year.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

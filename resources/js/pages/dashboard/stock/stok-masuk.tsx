@@ -84,6 +84,8 @@ export default function StokMasukDashboard({ user }: Props) {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
+    const [selectedDate, setSelectedDate] = useState<string>('all');
+    const [selectedYear, setSelectedYear] = useState<string>('all');
 
     // Auto-fill satuan when product_id changes
     useEffect(() => {
@@ -127,8 +129,37 @@ export default function StokMasukDashboard({ user }: Props) {
         return months;
     };
 
+    // Generate years for select
+    const generateYears = () => {
+        const years = [{ value: 'all', label: 'Semua Tahun' }];
+        const currentYear = new Date().getFullYear();
+        for (let i = 0; i < 5; i++) {
+            const year = currentYear - i;
+            years.push({ value: year.toString(), label: year.toString() });
+        }
+        return years;
+    };
+
+    // Generate dates for select (last 30 days)
+    const generateDates = () => {
+        const dates = [{ value: 'all', label: 'Semua Tanggal' }];
+        const currentDate = new Date();
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() - i);
+            const dateKey = date.toISOString().split('T')[0];
+            const dateLabel = date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+            dates.push({ value: dateKey, label: dateLabel });
+        }
+        return dates;
+    };
+
     // Fetch data dari API
-    const fetchStockMasuk = async (month?: string, kiosId?: string) => {
+    const fetchStockMasuk = async (month?: string, kiosId?: string, date?: string, year?: string) => {
         try {
             setLoading(true);
             setError(null);
@@ -138,6 +169,12 @@ export default function StokMasukDashboard({ user }: Props) {
             }
             if (month && month !== 'all') {
                 params.append('month', month);
+            }
+            if (date && date !== 'all') {
+                params.append('date', date);
+            }
+            if (year && year !== 'all') {
+                params.append('year', year);
             }
 
             const csrfToken = getCsrfToken();
@@ -257,10 +294,15 @@ export default function StokMasukDashboard({ user }: Props) {
     };
 
     useEffect(() => {
-        fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
+        fetchStockMasuk(
+            selectedMonth === 'all' ? undefined : selectedMonth,
+            selectedKios === 'all' ? undefined : selectedKios,
+            selectedDate === 'all' ? undefined : selectedDate,
+            selectedYear === 'all' ? undefined : selectedYear
+        );
         fetchKios();
         fetchProducts();
-    }, [selectedMonth, selectedKios]);
+    }, [selectedMonth, selectedKios, selectedDate, selectedYear]);
 
     // Handle download
     const handleDownload = async () => {
@@ -277,6 +319,12 @@ export default function StokMasukDashboard({ user }: Props) {
             }
             if (selectedMonth && selectedMonth !== 'all') {
                 params.append('month', selectedMonth);
+            }
+            if (selectedDate && selectedDate !== 'all') {
+                params.append('date', selectedDate);
+            }
+            if (selectedYear && selectedYear !== 'all') {
+                params.append('year', selectedYear);
             }
             params.append('download', '1');
 
@@ -485,7 +533,12 @@ export default function StokMasukDashboard({ user }: Props) {
                 setFieldErrors({});
                 setSelectedStockMasuk(null);
                 setError(null);
-                await fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
+                await fetchStockMasuk(
+                    selectedMonth === 'all' ? undefined : selectedMonth,
+                    selectedKios === 'all' ? undefined : selectedKios,
+                    selectedDate === 'all' ? undefined : selectedDate,
+                    selectedYear === 'all' ? undefined : selectedYear
+                );
             } else {
                 throw new Error(result.message || 'Gagal menyimpan data');
             }
@@ -547,7 +600,12 @@ export default function StokMasukDashboard({ user }: Props) {
                 setIsDeleteDialogOpen(false);
                 setDeleteId(null);
                 setError(null);
-                await fetchStockMasuk(selectedMonth === 'all' ? undefined : selectedMonth, selectedKios === 'all' ? undefined : selectedKios);
+                await fetchStockMasuk(
+                    selectedMonth === 'all' ? undefined : selectedMonth,
+                    selectedKios === 'all' ? undefined : selectedKios,
+                    selectedDate === 'all' ? undefined : selectedDate,
+                    selectedYear === 'all' ? undefined : selectedYear
+                );
             } else {
                 throw new Error(result.message || 'Gagal menghapus data');
             }
@@ -652,11 +710,26 @@ export default function StokMasukDashboard({ user }: Props) {
                                     <SelectTrigger id="kios">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent side="bottom">
                                         <SelectItem value="all">Semua Kios</SelectItem>
                                         {kios.map((k) => (
                                             <SelectItem key={k.id} value={k.id.toString()}>
                                                 {k.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1">
+                                <Label htmlFor="date">Filter Tanggal</Label>
+                                <Select value={selectedDate} onValueChange={setSelectedDate}>
+                                    <SelectTrigger id="date">
+                                        <SelectValue placeholder="Pilih Tanggal" />
+                                    </SelectTrigger>
+                                    <SelectContent side="bottom">
+                                        {generateDates().map((date) => (
+                                            <SelectItem key={date.value} value={date.value}>
+                                                {date.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -668,10 +741,25 @@ export default function StokMasukDashboard({ user }: Props) {
                                     <SelectTrigger id="month">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent side="bottom">
                                         {generateMonths().map((month) => (
                                             <SelectItem key={month.value} value={month.value}>
                                                 {month.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1">
+                                <Label htmlFor="year">Filter Tahun</Label>
+                                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                    <SelectTrigger id="year">
+                                        <SelectValue placeholder="Pilih Tahun" />
+                                    </SelectTrigger>
+                                    <SelectContent side="bottom">
+                                        {generateYears().map((year) => (
+                                            <SelectItem key={year.value} value={year.value}>
+                                                {year.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

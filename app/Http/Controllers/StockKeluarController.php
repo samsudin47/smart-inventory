@@ -47,6 +47,19 @@ class StockKeluarController extends Controller
             $query->where('kios_id', $request->kios_id);
         }
 
+        // Filter by date if provided
+        if ($request->has('date') && $request->date && $request->date !== 'all') {
+            try {
+                $date = Carbon::createFromFormat('Y-m-d', $request->date);
+                $query->whereDate('tanggal', $date->format('Y-m-d'));
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format tanggal tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
+                ], 400);
+            }
+        }
+
         // Filter by month if provided
         if ($request->has('month') && $request->month && $request->month !== 'all') {
             try {
@@ -58,6 +71,19 @@ class StockKeluarController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Format bulan tidak valid. Gunakan format Y-m (contoh: 2025-12)'
+                ], 400);
+            }
+        }
+
+        // Filter by year if provided
+        if ($request->has('year') && $request->year && $request->year !== 'all') {
+            try {
+                $year = (int) $request->year;
+                $query->whereYear('tanggal', $year);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format tahun tidak valid. Gunakan format Y (contoh: 2025)'
                 ], 400);
             }
         }
@@ -377,6 +403,18 @@ class StockKeluarController extends Controller
             }
         }
 
+        // Filter by date if provided
+        $dateFilter = '';
+        if ($request->has('date') && $request->date && $request->date !== 'all') {
+            try {
+                $date = Carbon::createFromFormat('Y-m-d', $request->date);
+                $query->whereDate('tanggal', $date->format('Y-m-d'));
+                $dateFilter = $date->format('d F Y');
+            } catch (\Exception $e) {
+                abort(400, 'Format tanggal tidak valid');
+            }
+        }
+
         // Filter by month if provided
         $monthFilter = '';
         if ($request->has('month') && $request->month && $request->month !== 'all') {
@@ -388,6 +426,18 @@ class StockKeluarController extends Controller
                 $monthFilter = $date->format('F Y');
             } catch (\Exception $e) {
                 abort(400, 'Format bulan tidak valid');
+            }
+        }
+
+        // Filter by year if provided
+        $yearFilter = '';
+        if ($request->has('year') && $request->year && $request->year !== 'all') {
+            try {
+                $year = (int) $request->year;
+                $query->whereYear('tanggal', $year);
+                $yearFilter = $year;
+            } catch (\Exception $e) {
+                abort(400, 'Format tahun tidak valid');
             }
         }
 
@@ -403,8 +453,14 @@ class StockKeluarController extends Controller
         if ($kiosFilter) {
             $titleParts[] = $kiosFilter;
         }
+        if ($dateFilter) {
+            $titleParts[] = $dateFilter;
+        }
         if ($monthFilter) {
             $titleParts[] = $monthFilter;
+        }
+        if ($yearFilter) {
+            $titleParts[] = $yearFilter;
         }
         $title = count($titleParts) > 0
             ? "Stock Keluar - " . implode(' - ', $titleParts)
@@ -450,8 +506,14 @@ class StockKeluarController extends Controller
         if ($kiosFilter) {
             $filenameParts[] = str_replace(' ', '-', strtolower($kiosFilter));
         }
+        if ($dateFilter) {
+            $filenameParts[] = str_replace(' ', '-', strtolower($dateFilter));
+        }
         if ($monthFilter) {
             $filenameParts[] = str_replace(' ', '-', strtolower($monthFilter));
+        }
+        if ($yearFilter) {
+            $filenameParts[] = $yearFilter;
         }
         $filename = count($filenameParts) > 0
             ? 'stock-keluar-' . implode('-', $filenameParts) . '.xlsx'
