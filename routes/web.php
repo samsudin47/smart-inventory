@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -11,6 +12,23 @@ Route::get('/', function () {
     }
     return app(AuthenticatedSessionController::class)->create(request());
 })->name('home');
+
+// Route untuk serve file storage jika symbolic link tidak bisa dibuat
+// Fallback untuk hosting yang tidak support exec() atau symlink
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    
+    $file = file_get_contents($filePath);
+    $mimeType = mime_content_type($filePath);
+    
+    return response($file, 200)
+        ->header('Content-Type', $mimeType)
+        ->header('Cache-Control', 'public, max-age=31536000');
+})->where('path', '.*')->name('storage.serve');
 
 // Rute untuk halaman unauthorized
 Route::get('/unauthorized', function () {
