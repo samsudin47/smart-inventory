@@ -214,20 +214,20 @@ export default function DataKiosDashboard({ user }: Props) {
                             <span className="ml-2 text-gray-600 dark:text-gray-300">Memuat data...</span>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto rounded-md border dark:border-gray-700">
+                        <div className="w-full overflow-x-auto rounded-md border dark:border-gray-700 -mx-2 sm:-mx-4 md:mx-0">
                             <table className="w-full">
                                 <thead className="bg-gray-50 dark:bg-gray-700">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[50px]">
                                             No
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[150px]">
                                             Nama Kios
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
                                             Dibuat
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                        <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
                                             Aksi
                                         </th>
                                     </tr>
@@ -235,40 +235,40 @@ export default function DataKiosDashboard({ user }: Props) {
                                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                                     {kios.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={4} className="px-3 sm:px-6 py-8 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                 Tidak ada data kios
                                             </td>
                                         </tr>
                                     ) : (
                                         kios.map((item, index) => (
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 dark:text-gray-100">
                                                     {index + 1}
                                                 </td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {item.nama}
                                                 </td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                     {new Date(item.created_at).toLocaleDateString('id-ID')}
                                                 </td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-center text-xs sm:text-sm font-medium">
                                                     {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                                        <div className="flex justify-center gap-2">
+                                                        <div className="flex justify-center gap-1 sm:gap-2">
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
                                                                 onClick={() => openEditDialog(item)}
-                                                                className="h-8 w-8 p-0 cursor-pointer"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 cursor-pointer"
                                                             >
-                                                                <Pencil className="h-4 w-4" />
+                                                                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
                                                                 onClick={() => openDeleteDialog(item.id)}
-                                                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 cursor-pointer"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700 cursor-pointer"
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
                                                         </div>
                                                     )}
@@ -283,7 +283,7 @@ export default function DataKiosDashboard({ user }: Props) {
 
                     {/* Create/Edit Dialog */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent>
+                        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[95vh] overflow-y-auto p-4 sm:p-6">
                             <DialogHeader>
                                 <DialogTitle>{selectedKios ? 'Edit Kios' : 'Tambah Kios Baru'}</DialogTitle>
                                 <DialogDescription>
@@ -293,19 +293,20 @@ export default function DataKiosDashboard({ user }: Props) {
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit}>
-                                <div className="grid gap-4 py-4">
+                                <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="nama">Nama Kios</Label>
+                                        <Label htmlFor="nama" className="text-xs sm:text-sm">Nama Kios</Label>
                                         <Input
                                             id="nama"
                                             value={formData.nama}
                                             onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                                             placeholder="Masukkan nama kios"
                                             required
+                                            className="text-xs sm:text-sm"
                                         />
                                     </div>
                                 </div>
-                                <DialogFooter>
+                                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -315,14 +316,14 @@ export default function DataKiosDashboard({ user }: Props) {
                                             setSelectedKios(null);
                                         }}
                                         disabled={isSubmitting}
-                                        className="cursor-pointer"
+                                        className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm"
                                     >
                                         Batal
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
+                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm">
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 className="mr-2 size-4 animate-spin" />
+                                                <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                                                 Menyimpan...
                                             </>
                                         ) : (

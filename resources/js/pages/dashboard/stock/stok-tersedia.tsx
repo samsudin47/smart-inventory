@@ -308,12 +308,12 @@ export default function StokTersediaDashboard({ user }: Props) {
                     </div>
 
                     {/* Filter */}
-                    <Card className="mb-4 p-4">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                            <div className="flex-1">
-                                <Label htmlFor="kios">Filter Kios</Label>
+                    <Card className="mb-4 p-3 sm:p-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+                            <div className="w-full">
+                                <Label htmlFor="kios" className="text-xs sm:text-sm">Filter Kios</Label>
                                 <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
-                                    <SelectTrigger id="kios">
+                                    <SelectTrigger id="kios" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -326,10 +326,10 @@ export default function StokTersediaDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1">
-                                <Label htmlFor="month">Filter Bulan</Label>
+                            <div className="w-full">
+                                <Label htmlFor="month" className="text-xs sm:text-sm">Filter Bulan</Label>
                                 <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
-                                    <SelectTrigger id="month">
+                                    <SelectTrigger id="month" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -341,14 +341,17 @@ export default function StokTersediaDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button
-                                variant="outline"
-                                onClick={handleDownload}
-                                className="flex items-center gap-2 w-full sm:w-auto cursor-pointer"
-                            >
-                                <Download className="h-4 w-4" />
-                                Download Excel
-                            </Button>
+                            <div className="w-full flex items-end">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleDownload}
+                                    className="flex items-center gap-2 w-full cursor-pointer h-9 text-xs sm:text-sm"
+                                >
+                                    <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Download Excel</span>
+                                    <span className="sm:hidden">Download</span>
+                                </Button>
+                            </div>
                         </div>
                     </Card>
 
@@ -379,42 +382,42 @@ export default function StokTersediaDashboard({ user }: Props) {
                             </p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto rounded-md border dark:border-gray-600 -mx-4 md:mx-0">
+                        <div className="w-full overflow-x-auto rounded-md border dark:border-gray-600 -mx-2 sm:-mx-4 md:mx-0">
                             <div className="inline-block min-w-full align-middle">
-                                <Table>
+                                <Table className="w-full">
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>No</TableHead>
-                                        <TableHead>Produk</TableHead>
-                                        <TableHead>Kemasan</TableHead>
-                                        <TableHead>Satuan</TableHead>
-                                        <TableHead>Kios</TableHead>
-                                        <TableHead className="text-center">Stock Masuk</TableHead>
-                                        <TableHead className="text-center">Stock Keluar</TableHead>
-                                        <TableHead className="text-center">Stock Tersedia</TableHead>
-                                        <TableHead className="text-center">Bulan</TableHead>
+                                        <TableHead className="min-w-[50px] text-xs sm:text-sm">No</TableHead>
+                                        <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">Produk</TableHead>
+                                        <TableHead className="min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Kemasan</TableHead>
+                                        <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">Satuan</TableHead>
+                                        <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">Kios</TableHead>
+                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Masuk</TableHead>
+                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Keluar</TableHead>
+                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Tersedia</TableHead>
+                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Bulan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredStock.map((item, index) => (
                                         <TableRow key={`${item.product_id}-${item.kios_id}`}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell className="font-medium">
+                                            <TableCell className="text-xs sm:text-sm">{index + 1}</TableCell>
+                                            <TableCell className="font-medium text-xs sm:text-sm">
                                                 {item.product?.nama || '-'}
                                             </TableCell>
-                                            <TableCell>{item.product?.kemasan || '-'}</TableCell>
-                                            <TableCell>{item.product?.satuan || '-'}</TableCell>
-                                            <TableCell>{item.kios?.nama || '-'}</TableCell>
-                                            <TableCell className="text-center text-green-600 dark:text-green-400">
+                                            <TableCell className="text-xs sm:text-sm">{item.product?.kemasan || '-'}</TableCell>
+                                            <TableCell className="text-xs sm:text-sm">{item.product?.satuan || '-'}</TableCell>
+                                            <TableCell className="text-xs sm:text-sm">{item.kios?.nama || '-'}</TableCell>
+                                            <TableCell className="text-center text-green-600 dark:text-green-400 text-xs sm:text-sm">
                                                 {item.total_masuk.toLocaleString('id-ID')}
                                             </TableCell>
-                                            <TableCell className="text-center text-red-600 dark:text-red-400">
+                                            <TableCell className="text-center text-red-600 dark:text-red-400 text-xs sm:text-sm">
                                                 {item.total_keluar.toLocaleString('id-ID')}
                                             </TableCell>
-                                            <TableCell className="text-center font-semibold text-blue-600 dark:text-blue-400">
+                                            <TableCell className="text-center font-semibold text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
                                                 {item.quantity_tersedia.toLocaleString('id-ID')}
                                             </TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center text-xs sm:text-sm">
                                                 {item.bulan 
                                                     ? new Date(item.bulan + '-01').toLocaleDateString('id-ID', { 
                                                         month: 'long', 

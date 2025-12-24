@@ -698,12 +698,12 @@ export default function StokMasukDashboard({ user }: Props) {
                     {error && <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
                     {/* Filter */}
-                    <Card className="mb-4 p-4">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                            <div className="flex-1">
-                                <Label htmlFor="kios">Filter Kios</Label>
+                    <Card className="mb-4 p-3 sm:p-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-4">
+                            <div className="w-full">
+                                <Label htmlFor="kios" className="text-xs sm:text-sm">Filter Kios</Label>
                                 <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
-                                    <SelectTrigger id="kios">
+                                    <SelectTrigger id="kios" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Kios" />
                                     </SelectTrigger>
                                     <SelectContent side="bottom">
@@ -716,10 +716,10 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1">
-                                <Label htmlFor="date">Filter Tanggal</Label>
+                            <div className="w-full">
+                                <Label htmlFor="date" className="text-xs sm:text-sm">Filter Tanggal</Label>
                                 <Select value={selectedDate} onValueChange={(value) => setSelectedDate(value)}>
-                                    <SelectTrigger id="date">
+                                    <SelectTrigger id="date" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Tanggal" />
                                     </SelectTrigger>
                                     <SelectContent side="bottom">
@@ -731,10 +731,10 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1">
-                                <Label htmlFor="month">Filter Bulan</Label>
+                            <div className="w-full">
+                                <Label htmlFor="month" className="text-xs sm:text-sm">Filter Bulan</Label>
                                 <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
-                                    <SelectTrigger id="month">
+                                    <SelectTrigger id="month" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Bulan" />
                                     </SelectTrigger>
                                     <SelectContent side="bottom">
@@ -746,10 +746,10 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1">
-                                <Label htmlFor="year">Filter Tahun</Label>
+                            <div className="w-full">
+                                <Label htmlFor="year" className="text-xs sm:text-sm">Filter Tahun</Label>
                                 <Select value={selectedYear} onValueChange={(value) => setSelectedYear(value)}>
-                                    <SelectTrigger id="year">
+                                    <SelectTrigger id="year" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Tahun" />
                                     </SelectTrigger>
                                     <SelectContent side="bottom">
@@ -761,10 +761,13 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button variant="outline" onClick={handleDownload} className="flex w-full cursor-pointer items-center gap-2 sm:w-auto">
-                                <Download className="h-4 w-4" />
-                                Download Excel
-                            </Button>
+                            <div className="w-full flex items-end">
+                                <Button variant="outline" onClick={handleDownload} className="w-full cursor-pointer items-center gap-2 h-9 text-xs sm:text-sm">
+                                    <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Download Excel</span>
+                                    <span className="sm:hidden">Download</span>
+                                </Button>
+                            </div>
                         </div>
                     </Card>
 
@@ -773,37 +776,37 @@ export default function StokMasukDashboard({ user }: Props) {
                             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                         </div>
                     ) : (
-                        <div className="-mx-4 overflow-x-auto md:mx-0">
+                        <div className="w-full overflow-x-auto -mx-2 sm:-mx-4 md:mx-0">
                             <div className="inline-block min-w-full align-middle">
-                                <Table>
+                                <Table className="w-full">
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="min-w-[150px]">NAMA FA</TableHead>
-                                            <TableHead className="min-w-[150px]">NAMA KIOS</TableHead>
-                                            <TableHead className="min-w-[200px]">BARANG MASUK</TableHead>
-                                            <TableHead className="min-w-[120px]">QUANTUM (PCS)</TableHead>
-                                            <TableHead className="min-w-[100px]">SATUAN</TableHead>
-                                            <TableHead className="min-w-[150px]">TANGGAL BARANG MASUK</TableHead>
-                                            <TableHead className="min-w-[150px]">FOTO NOTA</TableHead>
+                                            <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">NAMA FA</TableHead>
+                                            <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">NAMA KIOS</TableHead>
+                                            <TableHead className="min-w-[150px] sm:min-w-[200px] text-xs sm:text-sm">BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">QUANTUM (PCS)</TableHead>
+                                            <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">SATUAN</TableHead>
+                                            <TableHead className="min-w-[130px] sm:min-w-[150px] text-xs sm:text-sm">TANGGAL BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[100px] sm:min-w-[150px] text-xs sm:text-sm">FOTO NOTA</TableHead>
                                             {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                                <TableHead className="min-w-[100px]">Aksi</TableHead>
+                                                <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">Aksi</TableHead>
                                             )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {tableRows.map((row, index) => (
                                             <TableRow key={row.item.id}>
-                                                <TableCell className="align-top font-medium">{row.item.user.name}</TableCell>
-                                                <TableCell className="align-top">{row.item.kios.nama}</TableCell>
-                                                <TableCell className="align-top">
+                                                <TableCell className="align-top font-medium text-xs sm:text-sm">{row.item.user.name}</TableCell>
+                                                <TableCell className="align-top text-xs sm:text-sm">{row.item.kios.nama}</TableCell>
+                                                <TableCell className="align-top text-xs sm:text-sm">
                                                     <div>
                                                         <div className="font-medium">{row.item.product.nama}</div>
-                                                        <div className="text-sm text-gray-500 dark:text-gray-400">{row.item.product.kemasan}</div>
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">{row.item.product.kemasan}</div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="align-top">{row.item.quantity}</TableCell>
-                                                <TableCell className="align-top">{row.item.product.satuan || '-'}</TableCell>
-                                                <TableCell className="align-top">
+                                                <TableCell className="align-top text-xs sm:text-sm">{row.item.quantity}</TableCell>
+                                                <TableCell className="align-top text-xs sm:text-sm">{row.item.product.satuan || '-'}</TableCell>
+                                                <TableCell className="align-top text-xs sm:text-sm">
                                                     {(() => {
                                                         const date = new Date(row.item.tanggal);
                                                         const day = date.getDate();
@@ -812,7 +815,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                         return `${day} ${month} ${year}`;
                                                     })()}
                                                 </TableCell>
-                                                <TableCell className="align-top">
+                                                <TableCell className="align-top text-xs sm:text-sm">
                                                     {row.item.foto_nota_url || row.item.foto_nota ? (
                                                         <button
                                                             onClick={() => {
@@ -835,10 +838,11 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                 imageErrorHandled.current = false;
                                                                 setIsImagePreviewOpen(true);
                                                             }}
-                                                            className="inline-flex cursor-pointer items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                                                            className="inline-flex cursor-pointer items-center gap-1 sm:gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs sm:text-sm"
                                                         >
-                                                            <ImageIcon className="h-4 w-4" />
-                                                            Lihat Foto
+                                                            <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                            <span className="hidden sm:inline">Lihat Foto</span>
+                                                            <span className="sm:hidden">Foto</span>
                                                         </button>
                                                     ) : (
                                                         <span className="text-gray-400">-</span>
@@ -846,14 +850,14 @@ export default function StokMasukDashboard({ user }: Props) {
                                                 </TableCell>
                                                 {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
                                                     <TableCell className="align-top">
-                                                        <div className="flex gap-2">
+                                                        <div className="flex gap-1 sm:gap-2">
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
                                                                 onClick={() => handleEdit(row.item)}
-                                                                className="h-8 w-8 cursor-pointer p-0"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer p-0"
                                                             >
-                                                                <Pencil className="h-4 w-4" />
+                                                                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
                                                             <Button
                                                                 variant="outline"
@@ -862,9 +866,9 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                     setDeleteId(row.item.id);
                                                                     setIsDeleteDialogOpen(true);
                                                                 }}
-                                                                className="h-8 w-8 cursor-pointer p-0 text-red-600 hover:text-red-700"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer p-0 text-red-600 hover:text-red-700"
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
                                                         </div>
                                                     </TableCell>
@@ -889,17 +893,17 @@ export default function StokMasukDashboard({ user }: Props) {
 
                     {/* Dialog untuk Add/Edit */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-2xl">
+                        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto sm:max-w-2xl p-4 sm:p-6">
                             <DialogHeader>
                                 <DialogTitle>{selectedStockMasuk ? 'Edit Stock Masuk' : 'Tambah Stock Masuk'}</DialogTitle>
                                 <DialogDescription>
                                     {selectedStockMasuk ? 'Ubah informasi stock masuk di bawah ini.' : 'Isi informasi stock masuk di bawah ini.'}
                                 </DialogDescription>
                             </DialogHeader>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                                <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="user_name">NAMA FA *</Label>
+                                        <Label htmlFor="user_name" className="text-xs sm:text-sm">NAMA FA *</Label>
                                         <Input
                                             id="user_name"
                                             type="text"
@@ -910,7 +914,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                         <input type="hidden" name="user_id" value={formData.user_id} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="kios_id">NAMA KIOS *</Label>
+                                        <Label htmlFor="kios_id" className="text-xs sm:text-sm">NAMA KIOS *</Label>
                                         <select
                                             id="kios_id"
                                             value={formData.kios_id}
@@ -936,7 +940,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="product_id">BARANG MASUK *</Label>
+                                    <Label htmlFor="product_id" className="text-xs sm:text-sm">BARANG MASUK *</Label>
                                     <select
                                         id="product_id"
                                         value={formData.product_id}
@@ -960,9 +964,9 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </select>
                                     {fieldErrors.product_id && <p className="text-sm text-red-500">{fieldErrors.product_id}</p>}
                                 </div>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="quantity">QUANTUM (PCS) *</Label>
+                                        <Label htmlFor="quantity" className="text-xs sm:text-sm">QUANTUM (PCS) *</Label>
                                         <Input
                                             id="quantity"
                                             type="number"
@@ -980,7 +984,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                         {fieldErrors.quantity && <p className="text-sm text-red-500">{fieldErrors.quantity}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="satuan">SATUAN</Label>
+                                        <Label htmlFor="satuan" className="text-xs sm:text-sm">SATUAN</Label>
                                         <Input
                                             id="satuan"
                                             type="text"
@@ -991,7 +995,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tanggal">TANGGAL BARANG MASUK *</Label>
+                                    <Label htmlFor="tanggal" className="text-xs sm:text-sm">TANGGAL BARANG MASUK *</Label>
                                     <Input
                                         id="tanggal"
                                         type="date"
@@ -1008,7 +1012,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                     {fieldErrors.tanggal && <p className="text-sm text-red-500">{fieldErrors.tanggal}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="foto_nota">FOTO NOTA</Label>
+                                    <Label htmlFor="foto_nota" className="text-xs sm:text-sm">FOTO NOTA</Label>
                                     <Input id="foto_nota" type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
                                     {previewImage && (
                                         <div className="relative mt-2 inline-block">
@@ -1025,20 +1029,20 @@ export default function StokMasukDashboard({ user }: Props) {
                                         </div>
                                     )}
                                 </div>
-                                <DialogFooter>
+                                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setIsDialogOpen(false)}
                                         disabled={isSubmitting}
-                                        className="cursor-pointer"
+                                        className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm"
                                     >
                                         Batal
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
+                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm">
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                                                 Menyimpan...
                                             </>
                                         ) : (

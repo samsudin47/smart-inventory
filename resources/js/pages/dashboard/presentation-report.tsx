@@ -215,8 +215,8 @@ export default function PresentationReport({ user }: Props) {
                     </div>
 
                     {/* Filters */}
-                    <Card className="p-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <Card className="p-3 sm:p-4">
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <div>
                                 <Label htmlFor="period">Periode</Label>
                                 <Select
