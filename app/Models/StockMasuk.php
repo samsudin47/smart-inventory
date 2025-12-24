@@ -85,9 +85,17 @@ class StockMasuk extends Model
             return null;
         }
 
-        // Use Storage::url() to get the correct URL
-        // This will use the 'url' config from filesystems.php
-        $url = Storage::disk('public')->url($this->foto_nota);
+        // Extract filename from path (e.g., "stock_masuk/nota/filename.jpg" -> "filename.jpg")
+        $filename = basename($this->foto_nota);
+        
+        // Use route() to generate URL that goes through Laravel route (with authentication)
+        // This ensures the image is served through the authenticated route
+        try {
+            $url = route('storage.stock-masuk.nota', ['filename' => $filename]);
+        } catch (\Exception $e) {
+            // Fallback to Storage::url() if route doesn't exist
+            $url = Storage::disk('public')->url($this->foto_nota);
+        }
         
         // Normalize URL to remove double slashes (except after protocol like http:// or https://)
         // Split by :// to preserve protocol, then normalize path

@@ -13,6 +13,34 @@ Route::get('/', function () {
     return app(AuthenticatedSessionController::class)->create(request());
 })->name('home');
 
+// Route untuk serve gambar stock masuk (harus didefinisikan SEBELUM route umum /storage/{path})
+// Route ini diakses melalui Laravel untuk menghindari 403 dari web server
+Route::get('/storage/stock_masuk/nota/{filename}', function ($filename) {
+    // Security: sanitize filename to prevent directory traversal
+    $filename = basename($filename);
+    
+    $filePath = storage_path('app/public/stock_masuk/nota/' . $filename);
+
+    // Security: prevent directory traversal
+    $realPath = realpath($filePath);
+    $storagePath = realpath(storage_path('app/public/stock_masuk/nota'));
+    if (!$realPath || !$storagePath || strpos($realPath, $storagePath) !== 0) {
+        abort(403, 'Access denied');
+    }
+
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        abort(404, 'File not found');
+    }
+
+    $file = file_get_contents($filePath);
+    $mimeType = mime_content_type($filePath) ?: 'image/jpeg';
+
+    return response($file, 200)
+        ->header('Content-Type', $mimeType)
+        ->header('Cache-Control', 'public, max-age=31536000')
+        ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+})->name('storage.stock-masuk.nota');
+
 // Route untuk serve file storage jika symbolic link tidak bisa dibuat
 // Fallback untuk hosting yang tidak support exec() atau symlink
 Route::get('/storage/{path}', function ($path) {
@@ -20,6 +48,13 @@ Route::get('/storage/{path}', function ($path) {
 
     if (!file_exists($filePath)) {
         abort(404);
+    }
+
+    // Security: prevent directory traversal
+    $realPath = realpath($filePath);
+    $storagePath = realpath(storage_path('app/public'));
+    if (!$realPath || strpos($realPath, $storagePath) !== 0) {
+        abort(403);
     }
 
     $file = file_get_contents($filePath);
@@ -36,6 +71,7 @@ Route::get('/unauthorized', function () {
 })->name('unauthorized');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+
     // Redirect ke dashboard sesuai role
     Route::get('dashboard', function () {
         $user = Auth::user();
