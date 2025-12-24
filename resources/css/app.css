@@ -139,3 +139,37 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Responsive background image for auth pages */
+.auth-background {
+    background-image: url('/smart-inventory.PNG');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+}
+
+/* Optimize for mobile devices */
+@media (max-width: 640px) {
+    .auth-background {
+        background-size: cover;
+        background-position: center;
+        background-attachment: scroll;
+    }
+}
+
+/* Optimize for tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .auth-background {
+        background-size: cover;
+        background-position: center;
+    }
+}
+
+/* Optimize for laptops and desktops */
+@media (min-width: 1025px) {
+    .auth-background {
+        background-size: cover;
+        background-position: center;
+    }
+}
