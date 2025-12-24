@@ -153,6 +153,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 ))}
                             </div>
                         </div>
+                        {/* Logo Foto */}
+                        <div className="mr-2 flex items-center">
+                            <img 
+                                src="/public/smart-inventory.PNG" 
+                                alt="Smart Inventory Logo" 
+                                className="h-8 w-8 rounded-md object-cover"
+                            />
+                        </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="size-10 rounded-full p-1">

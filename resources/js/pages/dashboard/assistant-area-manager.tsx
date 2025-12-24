@@ -13,17 +13,33 @@ export default function AssistantAreaManagerDashboard({ user }: Props) {
             <Head title="Dashboard Assistant Area Manager" />
 
             <AuthenticatedLayout>
-                <div className="space-y-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                            Selamat datang, {user.name}!
-                        </h1>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">
-                            Sebagai Assistant Area Manager, Anda dapat mengelola area dan mengawasi operasional di wilayah Anda.
-                        </p>
-                    </div>
+                <div className="relative min-h-full flex flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                    {/* Background Image Layer - Same as login/register */}
+                    <div
+                        className="absolute inset-0 opacity-30 dark:opacity-50 rounded-xl pointer-events-none"
+                        style={{
+                            backgroundImage: 'url(/public/smart-inventory.PNG)',
+                            backgroundSize: '60%',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                        }}
+                    />
+                    
+                    {/* Dark Mode Overlay */}
+                    <div className="absolute inset-0 bg-background/50 dark:bg-background/60 rounded-xl pointer-events-none" />
+                    
+                    {/* Content Layer */}
+                    <div className="relative z-10 space-y-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                                Selamat datang, {user.name}!
+                            </h1>
+                            <p className="mt-2 text-gray-600 dark:text-gray-400">
+                                Sebagai Assistant Area Manager, Anda dapat mengelola area dan mengawasi operasional di wilayah Anda.
+                            </p>
+                        </div>
 
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 transition-all duration-300 hover:shadow-lg dark:from-blue-900/20 dark:to-blue-800/20">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -70,6 +86,7 @@ export default function AssistantAreaManagerDashboard({ user }: Props) {
                                     </p>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </div>
                 </div>
