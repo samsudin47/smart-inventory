@@ -142,7 +142,7 @@
 
 /* Responsive background image for auth pages */
 .auth-background {
-    background-image: url('/smart-inventory.PNG');
+    background-image: url('/public/smart-inventory.PNG');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

@@ -11,8 +11,16 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
-        <div 
-            className="auth-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10"
+        <div
+            className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10"
+            style={{
+                backgroundImage: 'url(/public/smart-inventory.PNG)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                minHeight: '100vh',
+                backgroundColor: '#000000',
+            }}
         >
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">
