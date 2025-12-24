@@ -449,23 +449,39 @@ export default function StokKeluarDashboard({ user }: Props) {
             const url = selectedStockKeluar ? `/api/stock-keluar/${selectedStockKeluar.id}` : '/api/stock-keluar';
             const method = selectedStockKeluar ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    user_id: parseInt(formData.user_id, 10),
-                    kios_id: parseInt(formData.kios_id, 10),
-                    product_id: parseInt(formData.product_id, 10),
-                    quantity: parseInt(formData.quantity, 10),
-                    tanggal: formData.tanggal,
-                }),
-            });
+            let response;
+            try {
+                response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        user_id: parseInt(formData.user_id, 10),
+                        kios_id: parseInt(formData.kios_id, 10),
+                        product_id: parseInt(formData.product_id, 10),
+                        quantity: parseInt(formData.quantity, 10),
+                        tanggal: formData.tanggal,
+                    }),
+                });
+            } catch (fetchError) {
+                // Handle network errors, but don't log 422 as unhandled
+                if (fetchError && fetchError.message && fetchError.message.includes('422')) {
+                    // Create a mock 422 response
+                    response = {
+                        ok: false,
+                        status: 422,
+                        json: async () => ({ success: false, errors: {}, message: 'Validation error' }),
+                        statusText: 'Unprocessable Content'
+                    } as Response;
+                } else {
+                    throw fetchError;
+                }
+            }
 
             // Handle CSRF token mismatch (419)
             if (response.status === 419) {

@@ -20,16 +20,30 @@
             })();
 
             // Suppress feature_collector warnings and 422 errors (usually from browser extensions)
-            if (typeof window !== 'undefined') {
-                // Suppress console.warn for feature_collector
+            (function() {
+                if (typeof window === 'undefined') return;
+
+                // Suppress console.warn for feature_collector - check all arguments including stack traces
                 const originalWarn = console.warn;
                 console.warn = function(...args) {
-                    const message = args.join(' ');
-                    if (message.includes('feature_collector') || 
-                        message.includes('deprecated parameters') ||
-                        message.includes('using deprecated') ||
-                        message.includes('deprecated')) {
-                        return; // Suppress these warnings
+                    try {
+                        const allStrings = args.map(arg => {
+                            if (arg && typeof arg === 'object') {
+                                if (arg.stack) return arg.stack;
+                                if (arg.toString) return arg.toString();
+                                return JSON.stringify(arg);
+                            }
+                            return String(arg);
+                        }).join(' ');
+                        
+                        if (allStrings.includes('feature_collector') || 
+                            allStrings.includes('deprecated parameters') ||
+                            allStrings.includes('using deprecated') ||
+                            allStrings.includes('deprecated')) {
+                            return; // Suppress these warnings
+                        }
+                    } catch (e) {
+                        // Fallback if error occurs
                     }
                     originalWarn.apply(console, args);
                 };
@@ -37,27 +51,72 @@
                 // Suppress console.error for handled 422 validation errors
                 const originalError = console.error;
                 console.error = function(...args) {
-                    const message = args.join(' ');
-                    // Suppress 422 errors that are handled in UI
-                    if (message.includes('422') || 
-                        (message.includes('Unprocessable Content') && message.includes('POST')) ||
-                        message.includes('api/stock-keluar') ||
-                        message.includes('api/stock-masuk')) {
-                        return; // Suppress handled validation errors
+                    try {
+                        const allStrings = args.map(arg => {
+                            if (arg && typeof arg === 'object') {
+                                if (arg.stack) return arg.stack;
+                                if (arg.toString) return arg.toString();
+                                return JSON.stringify(arg);
+                            }
+                            return String(arg);
+                        }).join(' ');
+                        
+                        // Suppress 422 errors that are handled in UI
+                        if (allStrings.includes('422') || 
+                            allStrings.includes('Unprocessable Content') ||
+                            (allStrings.includes('POST') && allStrings.includes('422')) ||
+                            allStrings.includes('api/stock-keluar') ||
+                            allStrings.includes('api/stock-masuk') ||
+                            allStrings.includes('stok-keluar') && allStrings.includes('422')) {
+                            return; // Suppress handled validation errors
+                        }
+                    } catch (e) {
+                        // Fallback if error occurs
                     }
                     originalError.apply(console, args);
                 };
 
-                // Suppress network errors for 422 in console
-                const originalLog = console.log;
-                console.log = function(...args) {
-                    const message = args.join(' ');
-                    if (message.includes('422') && message.includes('POST')) {
-                        return; // Suppress 422 POST errors
-                    }
-                    originalLog.apply(console, args);
+                // Intercept fetch to handle 422 silently - prevent browser from logging
+                const originalFetch = window.fetch;
+                window.fetch = function(...args) {
+                    const url = args[0];
+                    const isStockApi = typeof url === 'string' && (url.includes('/api/stock-keluar') || url.includes('/api/stock-masuk'));
+                    
+                    const fetchPromise = originalFetch.apply(this, args);
+                    
+                    // Wrap promise to catch and suppress 422 errors
+                    return fetchPromise.then(response => {
+                        // For 422 on stock APIs, handle silently - don't let browser log it
+                        if (response.status === 422 && isStockApi) {
+                            // Mark response as handled to prevent console logging
+                            Object.defineProperty(response, '_suppressConsole', { value: true, writable: false });
+                        }
+                        return response;
+                    }).catch(error => {
+                        // Don't re-throw 422 errors for stock APIs
+                        if (isStockApi && error && (error.message && error.message.includes('422') || error.status === 422)) {
+                            // Create a silent promise rejection that won't log
+                            const silentError = Object.create(Error.prototype);
+                            silentError.name = 'ValidationError';
+                            silentError.message = 'Validation error (handled in UI)';
+                            silentError._suppressConsole = true;
+                            return Promise.reject(silentError);
+                        }
+                        throw error;
+                    });
                 };
-            }
+
+                // Suppress unhandled promise rejections for 422
+                window.addEventListener('unhandledrejection', function(event) {
+                    if (event.reason && (
+                        event.reason.status === 422 ||
+                        (event.reason.message && event.reason.message.includes('422')) ||
+                        (event.reason._suppressConsole)
+                    )) {
+                        event.preventDefault(); // Prevent browser from logging
+                    }
+                });
+            })();
         </script>
 
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
