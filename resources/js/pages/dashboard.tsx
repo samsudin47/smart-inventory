@@ -18,12 +18,12 @@ export default function Dashboard() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="relative flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="relative flex min-h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {/* Background Image Layer - Only for Assistant Area Manager and Field Assistant */}
                 {shouldShowBackground && (
                     <>
                         <div
-                            className="absolute inset-0 opacity-20 dark:opacity-30 rounded-xl"
+                            className="absolute inset-0 opacity-20 dark:opacity-30 rounded-xl pointer-events-none"
                             style={{
                                 backgroundImage: 'url(/public/smart-inventory.PNG)',
                                 backgroundSize: '50%',
@@ -31,12 +31,12 @@ export default function Dashboard() {
                                 backgroundRepeat: 'no-repeat',
                             }}
                         />
-                        <div className="absolute inset-0 bg-background/40 dark:bg-background/60 rounded-xl" />
+                        <div className="absolute inset-0 bg-background/40 dark:bg-background/60 rounded-xl pointer-events-none" />
                     </>
                 )}
                 
                 {/* Content Layer */}
-                <div className={shouldShowBackground ? 'relative z-10' : ''}>
+                <div className="relative z-10">
                     <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                         <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                             <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />

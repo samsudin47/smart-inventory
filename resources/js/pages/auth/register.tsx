@@ -30,59 +30,64 @@ export default function Register() {
                 disableWhileProcessing
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors, setData }) => (
-                    <>
-                        <input type="hidden" name="role" value={role} />
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
-                                />
-                                <InputError message={errors.name} className="mt-2" />
-                            </div>
+                {({ processing, errors, setData }) => {
+                    const handleRoleChange = (value: string) => {
+                        setRole(value);
+                        if (setData) {
+                            setData('role', value);
+                        }
+                    };
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="email"
-                                    name="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                    return (
+                        <>
+                            <input type="hidden" name="role" value={role} />
+                            <div className="grid gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        type="text"
+                                        required
+                                        autoFocus
+                                        tabIndex={1}
+                                        autoComplete="name"
+                                        name="name"
+                                        placeholder="Full name"
+                                    />
+                                    <InputError message={errors.name} className="mt-2" />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Select
-                                    value={role}
-                                    onValueChange={(value) => {
-                                        setRole(value);
-                                        setData('role', value);
-                                    }}
-                                    required
-                                >
-                                    <SelectTrigger id="role" tabIndex={3}>
-                                        <SelectValue placeholder="Pilih Role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
-                                        <SelectItem value="Field Assistant">Field Assistant</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.role} />
-                            </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email address</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        required
+                                        tabIndex={2}
+                                        autoComplete="email"
+                                        name="email"
+                                        placeholder="email@example.com"
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="role">Role</Label>
+                                    <Select
+                                        value={role}
+                                        onValueChange={handleRoleChange}
+                                        required
+                                    >
+                                        <SelectTrigger id="role" tabIndex={3}>
+                                            <SelectValue placeholder="Pilih Role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
+                                            <SelectItem value="Field Assistant">Field Assistant</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.role} />
+                                </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Password</Label>
@@ -124,8 +129,9 @@ export default function Register() {
                                 Log in
                             </TextLink>
                         </div>
-                    </>
-                )}
+                        </>
+                    );
+                }}
             </Form>
         </AuthLayout>
     );

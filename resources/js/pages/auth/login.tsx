@@ -32,45 +32,50 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             <Head title="Log in" />
 
             <Form {...AuthenticatedSessionController.store.form()} resetOnSuccess={['password']} className="flex flex-col gap-6">
-                {({ processing, errors, data, setData }) => (
-                    <>
-                        <input type="hidden" name="role" value={role} />
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                {({ processing, errors, setData }) => {
+                    const handleRoleChange = (value: string) => {
+                        setRole(value);
+                        if (setData) {
+                            setData('role', value);
+                        }
+                    };
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Select
-                                    value={role}
-                                    onValueChange={(value) => {
-                                        setRole(value);
-                                        setData('role', value);
-                                    }}
-                                    required
-                                >
-                                    <SelectTrigger id="role" tabIndex={2}>
-                                        <SelectValue placeholder="Pilih Role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
-                                        <SelectItem value="Field Assistant">Field Assistant</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.role} />
-                            </div>
+                    return (
+                        <>
+                            <input type="hidden" name="role" value={role} />
+                            <div className="grid gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email address</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        name="email"
+                                        required
+                                        autoFocus
+                                        tabIndex={1}
+                                        autoComplete="email"
+                                        placeholder="email@example.com"
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="role">Role</Label>
+                                    <Select
+                                        value={role}
+                                        onValueChange={handleRoleChange}
+                                        required
+                                    >
+                                        <SelectTrigger id="role" tabIndex={2}>
+                                            <SelectValue placeholder="Pilih Role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Assistant Area Manager">Assistant Area Manager</SelectItem>
+                                            <SelectItem value="Field Assistant">Field Assistant</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.role} />
+                                </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
@@ -110,8 +115,9 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 Sign up
                             </TextLink>
                         </div>
-                    </>
-                )}
+                        </>
+                    );
+                }}
             </Form>
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
