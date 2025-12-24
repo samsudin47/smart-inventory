@@ -42,6 +42,7 @@ type StockMasuk = {
     quantity: number;
     tanggal: string;
     foto_nota: string | null;
+    foto_nota_url: string | null;
     created_at: string;
     updated_at: string;
     user: UserData;
@@ -568,7 +569,10 @@ export default function StokMasukDashboard({ user }: Props) {
             foto_nota: null,
         });
         // Set preview image if foto_nota exists
-        if (item.foto_nota) {
+        if (item.foto_nota_url) {
+            setPreviewImage(item.foto_nota_url);
+        } else if (item.foto_nota) {
+            // Fallback to old format if foto_nota_url is not available
             setPreviewImage(`/storage/${item.foto_nota}`);
         } else {
             setPreviewImage(null);
@@ -605,7 +609,7 @@ export default function StokMasukDashboard({ user }: Props) {
         } else {
             // If no file selected and we're editing, keep the existing preview
             if (selectedStockMasuk?.foto_nota && !formData.foto_nota) {
-                setPreviewImage(`/storage/${selectedStockMasuk.foto_nota}`);
+                setPreviewImage(selectedStockMasuk.foto_nota_url || `/storage/${selectedStockMasuk.foto_nota}`);
             }
         }
     };
@@ -721,10 +725,10 @@ export default function StokMasukDashboard({ user }: Props) {
                                                     })}
                                                 </TableCell>
                                                 <TableCell className="align-top">
-                                                    {row.item.foto_nota ? (
+                                                    {row.item.foto_nota_url || row.item.foto_nota ? (
                                                         <button
                                                             onClick={() => {
-                                                                setPreviewImageUrl(`/storage/${row.item.foto_nota}`);
+                                                                setPreviewImageUrl(row.item.foto_nota_url || `/storage/${row.item.foto_nota}`);
                                                                 setIsImagePreviewOpen(true);
                                                             }}
                                                             className="inline-flex cursor-pointer items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400"

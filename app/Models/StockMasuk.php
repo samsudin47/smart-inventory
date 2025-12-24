@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class StockMasuk extends Model
 {
@@ -24,6 +25,8 @@ class StockMasuk extends Model
         'tanggal' => 'date',
         'is_deleted' => 'boolean',
     ];
+
+    protected $appends = ['foto_nota_url'];
 
     /**
      * Get the user (Field Assistant) that owns the stock masuk.
@@ -71,6 +74,20 @@ class StockMasuk extends Model
     public function scopeNotDeleted($query)
     {
         return $query->where('is_deleted', false);
+    }
+
+    /**
+     * Get the full URL for foto_nota.
+     */
+    public function getFotoNotaUrlAttribute(): ?string
+    {
+        if (!$this->foto_nota) {
+            return null;
+        }
+
+        // Use Storage::url() to get the correct URL
+        // This will use the 'url' config from filesystems.php
+        return Storage::disk('public')->url($this->foto_nota);
     }
 }
 
