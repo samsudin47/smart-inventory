@@ -34,12 +34,16 @@ class StockTersediaController extends Controller
     public function apiIndex(Request $request): JsonResponse
     {
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
+        // Assistant Area Manager bisa melihat semua (ALL access)
         if (Auth::user()->role === 'Field Assistant') {
             // Calculate stock tersedia based on user's own stock_masuk and stock_keluar only
             $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser(Auth::id());
-        } else {
-            // Assistant Area Manager bisa melihat semua (no filter)
+        } elseif (Auth::user()->role === 'Assistant Area Manager') {
+            // Assistant Area Manager bisa melihat semua (no filter) - ALL access
             $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+        } else {
+            // Default: jika role tidak dikenal, return empty
+            $stockTersedia = collect();
         }
 
         // Filter by kios if provided
@@ -107,6 +111,7 @@ class StockTersediaController extends Controller
         $kios = \App\Models\DataKios::find($validated['kios_id']);
 
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
+        // Assistant Area Manager bisa melihat semua (ALL access)
         if (Auth::user()->role === 'Field Assistant') {
             $userId = Auth::id();
             
@@ -179,7 +184,15 @@ class StockTersediaController extends Controller
             ]);
         }
 
-        // Assistant Area Manager: Get stock tersedia from database
+        // Assistant Area Manager: Get stock tersedia from database (ALL access)
+        // Field Assistant yang sudah melewati pengecekan di atas akan di-handle di blok sebelumnya
+        if (Auth::user()->role !== 'Assistant Area Manager' && Auth::user()->role !== 'Field Assistant') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengakses data ini.'
+            ], 403);
+        }
+
         $stockTersedia = StockTersedia::notDeleted()
             ->where('product_id', $validated['product_id'])
             ->where('kios_id', $validated['kios_id'])
@@ -228,12 +241,16 @@ class StockTersediaController extends Controller
     public function apiDownload(Request $request): StreamedResponse
     {
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
+        // Assistant Area Manager bisa melihat semua (ALL access)
         if (Auth::user()->role === 'Field Assistant') {
             // Calculate stock tersedia based on user's own stock_masuk and stock_keluar only
             $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser(Auth::id());
-        } else {
-            // Assistant Area Manager bisa melihat semua (no filter)
+        } elseif (Auth::user()->role === 'Assistant Area Manager') {
+            // Assistant Area Manager bisa melihat semua (no filter) - ALL access
             $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+        } else {
+            // Default: jika role tidak dikenal, return empty
+            $stockTersedia = collect();
         }
 
         // Filter by kios if provided

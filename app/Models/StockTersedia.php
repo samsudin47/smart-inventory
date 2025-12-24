@@ -106,42 +106,105 @@ class StockTersedia extends Model
     }
 
     /**
-     * Get aggregated stock tersedia data from stock_tersedia table.
-     * This method directly queries from stock_tersedia table for better performance.
+     * Get aggregated stock tersedia data for ALL users (Assistant Area Manager access).
+     * This method calculates stock tersedia directly from stock_masuk and stock_keluar
+     * to ensure ALL data is visible, even if not yet synced to stock_tersedia table.
      */
     public static function getAggregatedStockTersedia()
     {
-        // Get all stock tersedia records from database with non-deleted products and kios
-        $stockTersedia = self::notDeleted()
-            ->whereHas('product', function ($query) {
-                $query->where('is_deleted', false);
+        // Get all product_id and kios_id combinations from ALL stock_masuk and stock_keluar (no user filter)
+        $allProductKios = StockMasuk::notDeleted()
+            ->select('product_id', 'kios_id')
+            ->distinct()
+            ->get()
+            ->map(function ($item) {
+                return $item->product_id . '-' . $item->kios_id;
             })
-            ->whereHas('kios', function ($query) {
-                $query->where('is_deleted', false);
-            })
-            ->with(['product', 'kios'])
-            ->get();
+            ->merge(
+                StockKeluar::notDeleted()
+                    ->select('product_id', 'kios_id')
+                    ->distinct()
+                    ->get()
+                    ->map(function ($item) {
+                        return $item->product_id . '-' . $item->kios_id;
+                    })
+            )
+            ->unique()
+            ->map(function ($key) {
+                [$productId, $kiosId] = explode('-', $key);
+                return ['product_id' => (int) $productId, 'kios_id' => (int) $kiosId];
+            });
 
-        // Map and format the data
-        $result = $stockTersedia->map(function ($item) {
-            $product = $item->product;
-            $kios = $item->kios;
+        $result = collect();
 
-            // Get the latest date between created_at and updated_at for bulan column
-            $latestDate = $item->updated_at && $item->updated_at->gt($item->created_at) 
-                ? $item->updated_at 
-                : $item->created_at;
+        foreach ($allProductKios as $combination) {
+            $productId = $combination['product_id'];
+            $kiosId = $combination['kios_id'];
 
-            return [
-                'product_id' => $item->product_id,
-                'kios_id' => $item->kios_id,
-                'total_masuk' => (int) $item->quantity_masuk,
-                'total_keluar' => (int) $item->quantity_keluar,
-                'quantity_tersedia' => (int) $item->quantity_tersedia,
-                'tanggal_masuk' => $item->tanggal_masuk,
-                'tanggal_keluar' => $item->tanggal_keluar,
-                'created_at' => $item->created_at,
-                'updated_at' => $item->updated_at,
+            // Calculate totals from stock_masuk for ALL users (no user filter)
+            $totalMasuk = StockMasuk::notDeleted()
+                ->where('product_id', $productId)
+                ->where('kios_id', $kiosId)
+                ->sum('quantity');
+
+            // Get latest tanggal_masuk for ALL users
+            $latestMasuk = StockMasuk::notDeleted()
+                ->where('product_id', $productId)
+                ->where('kios_id', $kiosId)
+                ->latest('tanggal')
+                ->first();
+
+            // Calculate totals from stock_keluar for ALL users (no user filter)
+            $totalKeluar = StockKeluar::notDeleted()
+                ->where('product_id', $productId)
+                ->where('kios_id', $kiosId)
+                ->sum('quantity');
+
+            // Get latest tanggal_keluar for ALL users
+            $latestKeluar = StockKeluar::notDeleted()
+                ->where('product_id', $productId)
+                ->where('kios_id', $kiosId)
+                ->latest('tanggal')
+                ->first();
+
+            // Calculate quantity_tersedia
+            $quantityTersedia = max(0, $totalMasuk - $totalKeluar);
+
+            // Get product and kios info
+            $product = \App\Models\Product::where('id', $productId)
+                ->where('is_deleted', false)
+                ->first();
+            $kios = \App\Models\DataKios::where('id', $kiosId)
+                ->where('is_deleted', false)
+                ->first();
+
+            // Skip if product or kios is deleted
+            if (!$product || !$kios) {
+                continue;
+            }
+
+            // Determine latest date for bulan column
+            $latestDate = null;
+            if ($latestMasuk && $latestKeluar) {
+                $latestDate = $latestMasuk->tanggal->gt($latestKeluar->tanggal) 
+                    ? $latestMasuk->tanggal 
+                    : $latestKeluar->tanggal;
+            } elseif ($latestMasuk) {
+                $latestDate = $latestMasuk->tanggal;
+            } elseif ($latestKeluar) {
+                $latestDate = $latestKeluar->tanggal;
+            }
+
+            $result->push([
+                'product_id' => $productId,
+                'kios_id' => $kiosId,
+                'total_masuk' => (int) $totalMasuk,
+                'total_keluar' => (int) $totalKeluar,
+                'quantity_tersedia' => (int) $quantityTersedia,
+                'tanggal_masuk' => $latestMasuk ? $latestMasuk->tanggal : null,
+                'tanggal_keluar' => $latestKeluar ? $latestKeluar->tanggal : null,
+                'created_at' => $latestMasuk ? $latestMasuk->created_at : ($latestKeluar ? $latestKeluar->created_at : null),
+                'updated_at' => $latestMasuk ? $latestMasuk->updated_at : ($latestKeluar ? $latestKeluar->updated_at : null),
                 'latest_date' => $latestDate,
                 'bulan' => $latestDate ? $latestDate->format('Y-m') : null,
                 'product' => [
@@ -154,8 +217,8 @@ class StockTersedia extends Model
                     'id' => $kios->id,
                     'nama' => $kios->nama,
                 ],
-            ];
-        });
+            ]);
+        }
 
         return $result;
     }
