@@ -36,10 +36,13 @@
                             return String(arg);
                         }).join(' ');
                         
+                        // Suppress feature_collector and deprecation warnings
                         if (allStrings.includes('feature_collector') || 
                             allStrings.includes('deprecated parameters') ||
                             allStrings.includes('using deprecated') ||
-                            allStrings.includes('deprecated')) {
+                            allStrings.includes('deprecated') ||
+                            allStrings.includes('initialization function') ||
+                            allStrings.includes('pass a single object')) {
                             return; // Suppress these warnings
                         }
                     } catch (e) {
@@ -48,7 +51,7 @@
                     originalWarn.apply(console, args);
                 };
 
-                // Suppress console.error for handled 422 validation errors
+                // Suppress console.error for handled 422 validation errors and image 404s
                 const originalError = console.error;
                 console.error = function(...args) {
                     try {
@@ -69,6 +72,12 @@
                             allStrings.includes('api/stock-masuk') ||
                             allStrings.includes('stok-keluar') && allStrings.includes('422')) {
                             return; // Suppress handled validation errors
+                        }
+                        
+                        // Suppress 404 errors for smart-inventory.PNG (image loading errors)
+                        if ((allStrings.includes('404') || allStrings.includes('Not Found')) && 
+                            allStrings.includes('smart-inventory')) {
+                            return; // Suppress image 404 errors
                         }
                     } catch (e) {
                         // Fallback if error occurs
@@ -116,6 +125,19 @@
                         event.preventDefault(); // Prevent browser from logging
                     }
                 });
+
+                // Handle image loading errors globally to prevent 404 errors in console
+                document.addEventListener('error', function(event) {
+                    const target = event.target;
+                    if (target && target.tagName === 'IMG') {
+                        const imgSrc = target.src || target.getAttribute('src');
+                        if (imgSrc && imgSrc.includes('smart-inventory')) {
+                            // Prevent the error from bubbling and showing in console
+                            event.stopPropagation();
+                            event.preventDefault();
+                        }
+                    }
+                }, true); // Use capture phase to catch errors early
             })();
         </script>
 

@@ -14,6 +14,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     src="/smart-inventory.PNG" 
                     alt="The Architects Logo" 
                     className="h-8 w-8 rounded-md object-cover"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
             </div>
         </header>

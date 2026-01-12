@@ -65,6 +65,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         src="/smart-inventory.PNG" 
                                         alt="The Architects Logo" 
                                         className="h-6 w-6 rounded-md object-cover"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                     />
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
@@ -162,6 +163,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 src="/smart-inventory.PNG" 
                                 alt="The Architects Logo" 
                                 className="h-8 w-8 rounded-md object-cover"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                         </div>
                         <DropdownMenu>

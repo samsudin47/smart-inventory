@@ -1,4 +1,10 @@
 export default function AppLogo() {
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        // Hide broken image to prevent 404 errors from showing
+        const target = e.currentTarget;
+        target.style.display = 'none';
+    };
+
     return (
         <>
             <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-white">
@@ -6,6 +12,7 @@ export default function AppLogo() {
                     src="/smart-inventory.PNG" 
                     alt="The Architects Logo" 
                     className="h-full w-full rounded-md object-cover"
+                    onError={handleImageError}
                 />
             </div>
             <div className="ml-1 grid flex-1 text-left text-sm">
