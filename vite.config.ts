@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
+import path from 'path';
 
 const plugins = [
     laravel({
@@ -46,6 +47,11 @@ if (shouldUseWayfinder) {
 export default defineConfig(({ mode }) => {
     return {
         plugins,
+        resolve: {
+            alias: {
+                '@': path.resolve(process.cwd(), 'resources/js'),
+            },
+        },
         esbuild: {
             jsx: 'automatic',
         },

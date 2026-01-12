@@ -1,10 +1,12 @@
-import AppLogoIcon from './app-logo-icon';
-
 export default function AppLogo() {
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-blue-600 text-sidebar-primary-foreground">
-                <AppLogoIcon className="size-5 fill-current text-white dark:text-white" />
+            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-white">
+                <img 
+                    src="/smart-inventory.PNG" 
+                    alt="The Architects Logo" 
+                    className="h-full w-full rounded-md object-cover"
+                />
             </div>
             <div className="ml-1 grid flex-1 text-left text-sm">
                 <span className="mb-0.5 truncate leading-tight font-semibold">THE ARCHITECTS</span>
