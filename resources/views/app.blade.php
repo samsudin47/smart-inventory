@@ -74,9 +74,9 @@
                             return; // Suppress handled validation errors
                         }
                         
-                        // Suppress 404 errors for smart-inventory.PNG (image loading errors)
+                        // Suppress 404 errors for smart-inventory.png (image loading errors)
                         if ((allStrings.includes('404') || allStrings.includes('Not Found')) && 
-                            allStrings.includes('smart-inventory')) {
+                            (allStrings.includes('smart-inventory') || allStrings.includes('smart-inventory.png'))) {
                             return; // Suppress image 404 errors
                         }
                     } catch (e) {

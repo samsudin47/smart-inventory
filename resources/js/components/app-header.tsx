@@ -62,7 +62,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     <img 
-                                        src="/smart-inventory.PNG" 
+                                        src="/smart-inventory.png" 
                                         alt="The Architects Logo" 
                                         className="h-6 w-6 rounded-md object-cover"
                                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -160,7 +160,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         {/* Logo Foto */}
                         <div className="mr-2 flex items-center">
                             <img 
-                                src="/smart-inventory.PNG" 
+                                src="/smart-inventory.png" 
                                 alt="The Architects Logo" 
                                 className="h-8 w-8 rounded-md object-cover"
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -170,7 +170,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage src="/smart-inventory.PNG" alt={auth.user.name} />
+                                        <AvatarImage src="/smart-inventory.png" alt={auth.user.name} />
                                         <AvatarFallback className="rounded-lg bg-white text-black">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>

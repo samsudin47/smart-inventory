@@ -8,7 +8,7 @@ export function UserInfo({ user, showEmail = false }: { user: User; showEmail?: 
     return (
         <>
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar || "/smart-inventory.PNG"} alt={user.name} />
+                <AvatarImage src={user.avatar || "/smart-inventory.png"} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-white text-black">
                     {getInitials(user.name)}
                 </AvatarFallback>

@@ -9,7 +9,7 @@ export default function AppLogo() {
         <>
             <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-white">
                 <img 
-                    src="/smart-inventory.PNG" 
+                    src="/smart-inventory.png" 
                     alt="The Architects Logo" 
                     className="h-full w-full rounded-md object-cover"
                     onError={handleImageError}

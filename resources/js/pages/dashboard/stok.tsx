@@ -17,7 +17,7 @@ export default function StokDashboard({ user }: Props) {
                     <div
                         className="absolute inset-0 opacity-30 dark:opacity-50 rounded-xl pointer-events-none"
                         style={{
-                            backgroundImage: 'url(/smart-inventory.PNG)',
+                            backgroundImage: 'url(/smart-inventory.png)',
                             backgroundSize: '60%',
                             backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',

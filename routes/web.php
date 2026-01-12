@@ -13,6 +13,44 @@ Route::get('/', function () {
     return app(AuthenticatedSessionController::class)->create(request());
 })->name('home');
 
+// Route untuk serve smart-inventory.png sebagai fallback jika file tidak ditemukan di public
+// Route ini akan handle case sensitivity issues dan memastikan file bisa diakses
+Route::get('/smart-inventory.png', function () {
+    // Coba berbagai variasi nama file untuk handle case sensitivity
+    $possiblePaths = [
+        public_path('smart-inventory.png'),
+        public_path('smart-inventory.PNG'),
+        public_path('smart-inventory.Png'),
+        public_path('smart-inventory.pNg'),
+    ];
+    
+    $filePath = null;
+    foreach ($possiblePaths as $path) {
+        if (file_exists($path) && is_file($path)) {
+            $filePath = $path;
+            break;
+        }
+    }
+    
+    if (!$filePath) {
+        // Jika file tidak ditemukan, return 404 dengan pesan yang jelas
+        abort(404, 'Logo file (smart-inventory.png) not found in public directory. Please ensure the file is uploaded to the server.');
+    }
+    
+    $file = file_get_contents($filePath);
+    $mimeType = mime_content_type($filePath) ?: 'image/png';
+    
+    return response($file, 200)
+        ->header('Content-Type', $mimeType)
+        ->header('Cache-Control', 'public, max-age=31536000')
+        ->header('Content-Disposition', 'inline; filename="smart-inventory.png"');
+})->name('logo.serve');
+
+// Route untuk backward compatibility dengan nama lama (PNG uppercase)
+Route::get('/smart-inventory.PNG', function () {
+    return redirect('/smart-inventory.png', 301);
+});
+
 // Route untuk serve gambar stock masuk (harus didefinisikan SEBELUM route umum /storage/{path})
 // Route ini diakses melalui Laravel untuk menghindari 403 dari web server
 Route::get('/storage/stock_masuk/nota/{filename}', function ($filename) {
