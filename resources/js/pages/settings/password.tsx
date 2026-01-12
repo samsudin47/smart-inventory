@@ -33,7 +33,8 @@ export default function Password() {
                     <HeadingSmall title="Update password" description="Ensure your account is using a long, random password to stay secure" />
 
                     <Form
-                        {...passwordUpdate.update()}
+                        action={passwordUpdate.update().url}
+                        method={passwordUpdate.update().method}
                         options={{
                             preserveScroll: true,
                         }}

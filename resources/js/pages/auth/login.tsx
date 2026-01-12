@@ -31,7 +31,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         <AuthLayout title="Log in to your account The Architects" description="Enter your email and password below to log in">
             <Head title="Log in" />
 
-            <Form {...loginStore.store()} resetOnSuccess={['password']} className="flex flex-col gap-6">
+            <Form 
+                action={loginStore.store().url} 
+                method={loginStore.store().method} 
+                resetOnSuccess={['password']} 
+                className="flex flex-col gap-6"
+            >
                 {({ processing, errors, setData }) => {
                     const handleRoleChange = (value: string) => {
                         setRole(value);
