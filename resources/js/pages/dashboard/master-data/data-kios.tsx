@@ -14,6 +14,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Props = {
     user: User;
@@ -22,6 +29,15 @@ type Props = {
 type Kios = {
     id: number;
     nama: string;
+    desa?: string | null;
+    kecamatan?: string | null;
+    kabupaten?: string | null;
+    nama_pemilik?: string | null;
+    no_hp?: string | null;
+    cluster_kios?: 'R1' | 'R2' | 'R3' | null;
+    is_deleted: boolean;
+    created_by?: number | null;
+    updated_by?: number | null;
     created_at: string;
     updated_at: string;
 };
@@ -39,7 +55,15 @@ export default function DataKiosDashboard({ user }: Props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedKios, setSelectedKios] = useState<Kios | null>(null);
-    const [formData, setFormData] = useState({ nama: '' });
+    const [formData, setFormData] = useState({
+        nama: '',
+        desa: '',
+        kecamatan: '',
+        kabupaten: '',
+        nama_pemilik: '',
+        no_hp: '',
+        cluster_kios: '' as 'R1' | 'R2' | 'R3' | '',
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -95,6 +119,17 @@ export default function DataKiosDashboard({ user }: Props) {
             const url = selectedKios ? `/api/kios/${selectedKios.id}` : '/api/kios';
             const method = selectedKios ? 'PUT' : 'POST';
 
+            // Convert empty strings to null for nullable fields
+            const payload = {
+                nama: formData.nama,
+                desa: formData.desa || null,
+                kecamatan: formData.kecamatan || null,
+                kabupaten: formData.kabupaten || null,
+                nama_pemilik: formData.nama_pemilik || null,
+                no_hp: formData.no_hp || null,
+                cluster_kios: formData.cluster_kios || null,
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -103,7 +138,7 @@ export default function DataKiosDashboard({ user }: Props) {
                     'X-CSRF-TOKEN': getCsrfToken(),
                 },
                 credentials: 'include',
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -114,7 +149,15 @@ export default function DataKiosDashboard({ user }: Props) {
             const result: ApiResponse<Kios> = await response.json();
             if (result.success) {
                 setIsDialogOpen(false);
-                setFormData({ nama: '' });
+                setFormData({
+                    nama: '',
+                    desa: '',
+                    kecamatan: '',
+                    kabupaten: '',
+                    nama_pemilik: '',
+                    no_hp: '',
+                    cluster_kios: '',
+                });
                 setSelectedKios(null);
                 await fetchKios();
             }
@@ -164,14 +207,30 @@ export default function DataKiosDashboard({ user }: Props) {
     // Open create dialog
     const openCreateDialog = () => {
         setSelectedKios(null);
-        setFormData({ nama: '' });
+        setFormData({
+            nama: '',
+            desa: '',
+            kecamatan: '',
+            kabupaten: '',
+            nama_pemilik: '',
+            no_hp: '',
+            cluster_kios: '',
+        });
         setIsDialogOpen(true);
     };
 
     // Open edit dialog
     const openEditDialog = (kiosItem: Kios) => {
         setSelectedKios(kiosItem);
-        setFormData({ nama: kiosItem.nama });
+        setFormData({
+            nama: kiosItem.nama,
+            desa: kiosItem.desa || '',
+            kecamatan: kiosItem.kecamatan || '',
+            kabupaten: kiosItem.kabupaten || '',
+            nama_pemilik: kiosItem.nama_pemilik || '',
+            no_hp: kiosItem.no_hp || '',
+            cluster_kios: kiosItem.cluster_kios || '',
+        });
         setIsDialogOpen(true);
     };
 
@@ -225,6 +284,24 @@ export default function DataKiosDashboard({ user }: Props) {
                                             Nama Kios
                                         </th>
                                         <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
+                                            Desa
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
+                                            Kecamatan
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
+                                            Kabupaten
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
+                                            Nama Pemilik
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
+                                            No. HP
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
+                                            Cluster
+                                        </th>
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
                                             Dibuat
                                         </th>
                                         <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
@@ -235,7 +312,7 @@ export default function DataKiosDashboard({ user }: Props) {
                                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                                     {kios.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-3 sm:px-6 py-8 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                            <td colSpan={10} className="px-3 sm:px-6 py-8 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                 Tidak ada data kios
                                             </td>
                                         </tr>
@@ -247,6 +324,36 @@ export default function DataKiosDashboard({ user }: Props) {
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {item.nama}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                                    {item.desa || '-'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                                    {item.kecamatan || '-'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                                    {item.kabupaten || '-'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                                    {item.nama_pemilik || '-'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                                    {item.no_hp || '-'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                                                    {item.cluster_kios ? (
+                                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                            item.cluster_kios === 'R1'
+                                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                                                : item.cluster_kios === 'R2'
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                                                : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                                                        }`}>
+                                                            {item.cluster_kios}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400">-</span>
+                                                    )}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                     {new Date(item.created_at).toLocaleDateString('id-ID')}
@@ -283,7 +390,7 @@ export default function DataKiosDashboard({ user }: Props) {
 
                     {/* Create/Edit Dialog */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+                        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[95vh] overflow-y-auto p-4 sm:p-6">
                             <DialogHeader>
                                 <DialogTitle>{selectedKios ? 'Edit Kios' : 'Tambah Kios Baru'}</DialogTitle>
                                 <DialogDescription>
@@ -295,7 +402,7 @@ export default function DataKiosDashboard({ user }: Props) {
                             <form onSubmit={handleSubmit}>
                                 <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="nama" className="text-xs sm:text-sm">Nama Kios</Label>
+                                        <Label htmlFor="nama" className="text-xs sm:text-sm">Nama Kios *</Label>
                                         <Input
                                             id="nama"
                                             value={formData.nama}
@@ -305,6 +412,73 @@ export default function DataKiosDashboard({ user }: Props) {
                                             className="text-xs sm:text-sm"
                                         />
                                     </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="desa" className="text-xs sm:text-sm">Desa</Label>
+                                        <Input
+                                            id="desa"
+                                            value={formData.desa}
+                                            onChange={(e) => setFormData({ ...formData, desa: e.target.value })}
+                                            placeholder="Masukkan nama desa"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="kecamatan" className="text-xs sm:text-sm">Kecamatan</Label>
+                                        <Input
+                                            id="kecamatan"
+                                            value={formData.kecamatan}
+                                            onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
+                                            placeholder="Masukkan nama kecamatan"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="kabupaten" className="text-xs sm:text-sm">Kabupaten</Label>
+                                        <Input
+                                            id="kabupaten"
+                                            value={formData.kabupaten}
+                                            onChange={(e) => setFormData({ ...formData, kabupaten: e.target.value })}
+                                            placeholder="Masukkan nama kabupaten"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="nama_pemilik" className="text-xs sm:text-sm">Nama Pemilik</Label>
+                                        <Input
+                                            id="nama_pemilik"
+                                            value={formData.nama_pemilik}
+                                            onChange={(e) => setFormData({ ...formData, nama_pemilik: e.target.value })}
+                                            placeholder="Masukkan nama pemilik"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="no_hp" className="text-xs sm:text-sm">No. HP</Label>
+                                        <Input
+                                            id="no_hp"
+                                            type="tel"
+                                            value={formData.no_hp}
+                                            onChange={(e) => setFormData({ ...formData, no_hp: e.target.value })}
+                                            placeholder="Masukkan nomor HP"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="cluster_kios" className="text-xs sm:text-sm">Cluster Kios</Label>
+                                        <Select
+                                            value={formData.cluster_kios || undefined}
+                                            onValueChange={(value: 'R1' | 'R2' | 'R3') => setFormData({ ...formData, cluster_kios: value })}
+                                        >
+                                            <SelectTrigger className="text-xs sm:text-sm">
+                                                <SelectValue placeholder="Pilih cluster (opsional)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="R1">R1</SelectItem>
+                                                <SelectItem value="R2">R2</SelectItem>
+                                                <SelectItem value="R3">R3</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                                 <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                                     <Button
@@ -312,7 +486,15 @@ export default function DataKiosDashboard({ user }: Props) {
                                         variant="outline"
                                         onClick={() => {
                                             setIsDialogOpen(false);
-                                            setFormData({ nama: '' });
+                                            setFormData({
+                                                nama: '',
+                                                desa: '',
+                                                kecamatan: '',
+                                                kabupaten: '',
+                                                nama_pemilik: '',
+                                                no_hp: '',
+                                                cluster_kios: '',
+                                            });
                                             setSelectedKios(null);
                                         }}
                                         disabled={isSubmitting}

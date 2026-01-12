@@ -11,26 +11,12 @@ use Illuminate\Support\Facades\Auth;
 
 class KiosController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(): View
     {
         $kios = DataKios::notDeleted()->latest()->get();
         return view('kios.index', compact('kios'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
-    {
-        return view('kios.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -42,13 +28,16 @@ class KiosController extends Controller
 
         DataKios::create($validated);
 
+        // Increment total_kios for the authenticated user
+        $user = Auth::user();
+        $currentTotal = (int) ($user->total_kios ?? 0);
+        $user->total_kios = (string) ($currentTotal + 1);
+        $user->save();
+
         return redirect()->route('kios.index')
             ->with('success', 'Kios berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(DataKios $kios): View
     {
         if ($kios->is_deleted) {
@@ -57,9 +46,6 @@ class KiosController extends Controller
         return view('kios.show', compact('kios'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(DataKios $kios): View
     {
         if ($kios->is_deleted) {
@@ -68,9 +54,6 @@ class KiosController extends Controller
         return view('kios.edit', compact('kios'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, DataKios $kios): RedirectResponse
     {
         if ($kios->is_deleted) {
@@ -89,9 +72,6 @@ class KiosController extends Controller
             ->with('success', 'Kios berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(DataKios $kios): RedirectResponse
     {
         if ($kios->is_deleted) {
@@ -107,9 +87,6 @@ class KiosController extends Controller
             ->with('success', 'Kios berhasil dihapus.');
     }
 
-    /**
-     * API: Display a listing of the resource.
-     */
     public function apiIndex(): JsonResponse
     {
         $kios = DataKios::notDeleted()->latest()->get();
@@ -121,9 +98,6 @@ class KiosController extends Controller
         ]);
     }
 
-    /**
-     * API: Display the specified resource.
-     */
     public function apiShow(DataKios $kios): JsonResponse
     {
         if ($kios->is_deleted) {
@@ -140,19 +114,29 @@ class KiosController extends Controller
         ]);
     }
 
-    /**
-     * API: Store a newly created resource in storage.
-     */
     public function apiStore(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
+            'desa' => ['nullable', 'string', 'max:255'],
+            'kecamatan' => ['nullable', 'string', 'max:255'],
+            'kabupaten' => ['nullable', 'string', 'max:255'],
+            'nama_pemilik' => ['nullable', 'string', 'max:255'],
+            'no_hp' => ['nullable', 'string', 'max:20'],
+            'cluster_kios' => ['nullable', 'in:R1,R2,R3'],
         ]);
 
         $validated['created_by'] = Auth::id();
         $validated['is_deleted'] = false;
+        $validated['cluster_kios'] = $validated['cluster_kios'] ?? null;
 
         $kios = DataKios::create($validated);
+
+        // Increment total_kios for the authenticated user
+        $user = Auth::user();
+        $currentTotal = (int) ($user->total_kios ?? 0);
+        $user->total_kios = (string) ($currentTotal + 1);
+        $user->save();
 
         return response()->json([
             'success' => true,
@@ -161,9 +145,6 @@ class KiosController extends Controller
         ], 201);
     }
 
-    /**
-     * API: Update the specified resource in storage.
-     */
     public function apiUpdate(Request $request, DataKios $kios): JsonResponse
     {
         if ($kios->is_deleted) {
@@ -175,6 +156,12 @@ class KiosController extends Controller
 
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
+            'desa' => ['nullable', 'string', 'max:255'],
+            'kecamatan' => ['nullable', 'string', 'max:255'],
+            'kabupaten' => ['nullable', 'string', 'max:255'],
+            'nama_pemilik' => ['nullable', 'string', 'max:255'],
+            'no_hp' => ['nullable', 'string', 'max:20'],
+            'cluster_kios' => ['nullable', 'in:R1,R2,R3'],
         ]);
 
         $validated['updated_by'] = Auth::id();
@@ -188,9 +175,6 @@ class KiosController extends Controller
         ]);
     }
 
-    /**
-     * API: Remove the specified resource from storage.
-     */
     public function apiDestroy(DataKios $kios): JsonResponse
     {
         if ($kios->is_deleted) {

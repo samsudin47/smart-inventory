@@ -33,56 +33,44 @@ class StockMasukController extends Controller
     public function apiIndex(Request $request): JsonResponse
     {
         $query = StockMasuk::notDeleted()
-            ->with(['user', 'kios', 'product', 'creator', 'updater']);
+            ->with(['user', 'kios', 'product', 'qtyKemasan', 'creator', 'updater']);
 
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
         if (Auth::user()->role === 'Field Assistant') {
             $query->where('user_id', Auth::id());
+        } elseif (Auth::user()->role === 'Assistant Area Manager') {
+            // Assistant Area Manager bisa filter by user_id jika diberikan
+            if ($request->has('user_id') && $request->user_id && $request->user_id !== 'all') {
+                $query->where('user_id', $request->user_id);
+            }
         }
-        // Assistant Area Manager bisa melihat semua (no filter)
 
         // Filter by kios if provided
         if ($request->has('kios_id') && $request->kios_id && $request->kios_id !== 'all') {
             $query->where('kios_id', $request->kios_id);
         }
 
-        // Filter by date if provided
-        if ($request->has('date') && $request->date && $request->date !== 'all') {
+        // Filter by periode (start_date and end_date)
+        if ($request->has('start_date') && $request->start_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m-d', $request->date);
-                $query->whereDate('tanggal', $date->format('Y-m-d'));
+                $startDate = Carbon::createFromFormat('Y-m-d', $request->start_date)->startOfDay();
+                $query->where('tanggal', '>=', $startDate);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Format tanggal tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
+                    'message' => 'Format start date tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
                 ], 400);
             }
         }
 
-        // Filter by month if provided
-        if ($request->has('month') && $request->month && $request->month !== 'all') {
+        if ($request->has('end_date') && $request->end_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m', $request->month);
-                $startDate = $date->copy()->startOfMonth();
-                $endDate = $date->copy()->endOfMonth();
-                $query->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                $endDate = Carbon::createFromFormat('Y-m-d', $request->end_date)->endOfDay();
+                $query->where('tanggal', '<=', $endDate);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Format bulan tidak valid. Gunakan format Y-m (contoh: 2025-12)'
-                ], 400);
-            }
-        }
-
-        // Filter by year if provided
-        if ($request->has('year') && $request->year && $request->year !== 'all') {
-            try {
-                $year = (int) $request->year;
-                $query->whereYear('tanggal', $year);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Format tahun tidak valid. Gunakan format Y (contoh: 2025)'
+                    'message' => 'Format end date tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
                 ], 400);
             }
         }
@@ -118,7 +106,7 @@ class StockMasukController extends Controller
             ], 403);
         }
 
-        $stockMasuk->load(['user', 'kios', 'product', 'creator', 'updater']);
+        $stockMasuk->load(['user', 'kios', 'product', 'qtyKemasan', 'creator', 'updater']);
 
         return response()->json([
             'success' => true,
@@ -136,7 +124,9 @@ class StockMasukController extends Controller
             'user_id' => ['required', 'exists:users,id'],
             'kios_id' => ['required', 'exists:master_kios,id'],
             'product_id' => ['required', 'exists:product,id'],
+            'qty_kemasan_id' => ['nullable', 'exists:qty_kemasan,id'],
             'quantity' => ['required', 'integer', 'min:1', 'max:999999'], // Max value to prevent overflow
+            'liter_or_kg' => ['nullable', 'string', 'max:255'],
             'tanggal' => ['required', 'date', 'before_or_equal:today'], // Cannot be in the future
             'foto_nota' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif', 'max:5120'], // max 5MB
         ]);
@@ -161,7 +151,7 @@ class StockMasukController extends Controller
             Auth::id()
         );
 
-        $stockMasuk->load(['user', 'kios', 'product', 'creator', 'updater']);
+        $stockMasuk->load(['user', 'kios', 'product', 'qtyKemasan', 'creator', 'updater']);
 
         return response()->json([
             'success' => true,
@@ -194,7 +184,9 @@ class StockMasukController extends Controller
             'user_id' => ['required', 'exists:users,id'],
             'kios_id' => ['required', 'exists:master_kios,id'],
             'product_id' => ['required', 'exists:product,id'],
+            'qty_kemasan_id' => ['nullable', 'exists:qty_kemasan,id'],
             'quantity' => ['required', 'integer', 'min:1', 'max:999999'], // Max value to prevent overflow
+            'liter_or_kg' => ['nullable', 'string', 'max:255'],
             'tanggal' => ['required', 'date', 'before_or_equal:today'], // Cannot be in the future
             'foto_nota' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif', 'max:5120'], // max 5MB
         ]);
@@ -236,7 +228,7 @@ class StockMasukController extends Controller
             );
         }
 
-        $stockMasuk->load(['user', 'kios', 'product', 'creator', 'updater']);
+        $stockMasuk->load(['user', 'kios', 'product', 'qtyKemasan', 'creator', 'updater']);
 
         return response()->json([
             'success' => true,
@@ -298,13 +290,17 @@ class StockMasukController extends Controller
     public function apiDownload(Request $request): StreamedResponse
     {
         $query = StockMasuk::notDeleted()
-            ->with(['user', 'kios', 'product']);
+            ->with(['user', 'kios', 'product', 'qtyKemasan']);
 
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
         if (Auth::user()->role === 'Field Assistant') {
             $query->where('user_id', Auth::id());
+        } elseif (Auth::user()->role === 'Assistant Area Manager') {
+            // Assistant Area Manager bisa filter by user_id jika diberikan
+            if ($request->has('user_id') && $request->user_id && $request->user_id !== 'all') {
+                $query->where('user_id', $request->user_id);
+            }
         }
-        // Assistant Area Manager bisa melihat semua (no filter)
 
         // Filter by kios if provided
         $kiosFilter = '';
@@ -316,41 +312,29 @@ class StockMasukController extends Controller
             }
         }
 
-        // Filter by date if provided
-        $dateFilter = '';
-        if ($request->has('date') && $request->date && $request->date !== 'all') {
+        // Filter by periode (start_date and end_date)
+        $periodeFilter = '';
+        if ($request->has('start_date') && $request->start_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m-d', $request->date);
-                $query->whereDate('tanggal', $date->format('Y-m-d'));
-                $dateFilter = $date->format('d F Y');
+                $startDate = Carbon::createFromFormat('Y-m-d', $request->start_date)->startOfDay();
+                $query->where('tanggal', '>=', $startDate);
+                $periodeFilter = Carbon::parse($request->start_date)->format('d F Y');
             } catch (\Exception $e) {
-                abort(400, 'Format tanggal tidak valid');
+                abort(400, 'Format start date tidak valid');
             }
         }
 
-        // Filter by month if provided
-        $monthFilter = '';
-        if ($request->has('month') && $request->month && $request->month !== 'all') {
+        if ($request->has('end_date') && $request->end_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m', $request->month);
-                $startDate = $date->copy()->startOfMonth();
-                $endDate = $date->copy()->endOfMonth();
-                $query->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                $monthFilter = $date->format('F Y');
+                $endDate = Carbon::createFromFormat('Y-m-d', $request->end_date)->endOfDay();
+                $query->where('tanggal', '<=', $endDate);
+                if ($periodeFilter) {
+                    $periodeFilter .= ' - ' . Carbon::parse($request->end_date)->format('d F Y');
+                } else {
+                    $periodeFilter = Carbon::parse($request->end_date)->format('d F Y');
+                }
             } catch (\Exception $e) {
-                abort(400, 'Format bulan tidak valid');
-            }
-        }
-
-        // Filter by year if provided
-        $yearFilter = '';
-        if ($request->has('year') && $request->year && $request->year !== 'all') {
-            try {
-                $year = (int) $request->year;
-                $query->whereYear('tanggal', $year);
-                $yearFilter = $year;
-            } catch (\Exception $e) {
-                abort(400, 'Format tahun tidak valid');
+                abort(400, 'Format end date tidak valid');
             }
         }
 
@@ -366,14 +350,8 @@ class StockMasukController extends Controller
         if ($kiosFilter) {
             $titleParts[] = $kiosFilter;
         }
-        if ($dateFilter) {
-            $titleParts[] = $dateFilter;
-        }
-        if ($monthFilter) {
-            $titleParts[] = $monthFilter;
-        }
-        if ($yearFilter) {
-            $titleParts[] = $yearFilter;
+        if ($periodeFilter) {
+            $titleParts[] = $periodeFilter;
         }
         $title = count($titleParts) > 0
             ? "Stock Masuk - " . implode(' - ', $titleParts)

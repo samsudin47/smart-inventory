@@ -156,8 +156,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         {/* Logo Foto */}
                         <div className="mr-2 flex items-center">
                             <img 
-                                src="/public/smart-inventory.PNG" 
-                                alt="Smart Inventory Logo" 
+                                src="/smart-inventory.PNG" 
+                                alt="The Architects Logo" 
                                 className="h-8 w-8 rounded-md object-cover"
                             />
                         </div>
@@ -165,7 +165,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage src="/public/smart-inventory.PNG" alt={auth.user.name} />
+                                        <AvatarImage src="/smart-inventory.PNG" alt={auth.user.name} />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>

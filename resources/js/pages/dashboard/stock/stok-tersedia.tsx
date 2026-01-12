@@ -1,21 +1,14 @@
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type User } from '@/types';
 import { Head } from '@inertiajs/react';
+import { Download, Loader2, Package, Search, TrendingDown, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '../../../layouts/authenticated-layout';
-import { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Loader2, Search, Package, TrendingUp, TrendingDown, Download } from 'lucide-react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Props = {
     user: User;
@@ -24,6 +17,13 @@ type Props = {
 type Kios = {
     id: number;
     nama: string;
+};
+
+type FA = {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
 };
 
 type Product = {
@@ -63,9 +63,12 @@ export default function StokTersediaDashboard({ user }: Props) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
+    const [selectedFA, setSelectedFA] = useState<string>('all');
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
     const [kios, setKios] = useState<Kios[]>([]);
+    const [users, setUsers] = useState<FA[]>([]);
     const [summary, setSummary] = useState({
         total_products: 0,
         total_masuk: 0,
@@ -77,19 +80,6 @@ export default function StokTersediaDashboard({ user }: Props) {
     const getCsrfToken = () => {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         return token || '';
-    };
-
-    // Generate months for select
-    const generateMonths = () => {
-        const months = [{ value: 'all', label: 'Semua Bulan' }];
-        const currentDate = new Date();
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthName = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-            months.push({ value: monthKey, label: monthName });
-        }
-        return months;
     };
 
     // Fetch kios
@@ -116,8 +106,64 @@ export default function StokTersediaDashboard({ user }: Props) {
         }
     };
 
+    // Fetch users (FA) - hanya untuk Assistant Area Manager
+    const fetchUsers = async () => {
+        if (user.role !== 'Assistant Area Manager') {
+            return; // Field Assistant tidak perlu fetch users
+        }
+
+        try {
+            const csrfToken = getCsrfToken();
+            if (!csrfToken) {
+                console.error('CSRF token tidak ditemukan');
+                return;
+            }
+
+            const response = await fetch('/api/petugas/dropdown', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (response.status === 419) {
+                console.error('CSRF token mismatch saat mengambil data users');
+                return;
+            }
+
+            if (!response.ok) {
+                // Jangan log error untuk 404 - route mungkin belum terdaftar atau ada masalah dengan middleware
+                if (response.status !== 404) {
+                    console.error('Error fetching users:', response.status, response.statusText);
+                }
+                return;
+            }
+
+            try {
+                const result: ApiResponse<FA[]> = await response.json();
+                if (result.success) {
+                    setUsers(result.data);
+                } else {
+                    console.warn('Failed to fetch users:', result.message);
+                }
+            } catch (parseError) {
+                console.error('Error parsing users response:', parseError);
+            }
+        } catch (err) {
+            if (err instanceof TypeError && err.message.includes('fetch')) {
+                console.warn('Network error saat mengambil data users');
+            } else {
+                console.error('Error fetching users:', err);
+            }
+        }
+    };
+
     // Fetch data dari API
-    const fetchStockTersedia = async (month?: string, kiosId?: string) => {
+    const fetchStockTersedia = async (kiosId?: string, userId?: string, startDate?: string, endDate?: string) => {
         try {
             setLoading(true);
             setError(null);
@@ -125,8 +171,14 @@ export default function StokTersediaDashboard({ user }: Props) {
             if (kiosId && kiosId !== 'all') {
                 params.append('kios_id', kiosId);
             }
-            if (month && month !== 'all') {
-                params.append('month', month);
+            if (userId && userId !== 'all') {
+                params.append('user_id', userId);
+            }
+            if (startDate) {
+                params.append('start_date', startDate);
+            }
+            if (endDate) {
+                params.append('end_date', endDate);
             }
             const response = await fetch(`/api/stock-tersedia?${params.toString()}`, {
                 method: 'GET',
@@ -167,10 +219,16 @@ export default function StokTersediaDashboard({ user }: Props) {
             if (selectedKios && selectedKios !== 'all') {
                 params.append('kios_id', selectedKios);
             }
-            if (selectedMonth && selectedMonth !== 'all') {
-                params.append('month', selectedMonth);
+            if (user.role === 'Assistant Area Manager' && selectedFA && selectedFA !== 'all') {
+                params.append('user_id', selectedFA);
             }
-            
+            if (startDate) {
+                params.append('start_date', startDate);
+            }
+            if (endDate) {
+                params.append('end_date', endDate);
+            }
+
             const response = await fetch(`/api/stock-tersedia/download?${params.toString()}`, {
                 method: 'GET',
                 headers: {
@@ -223,14 +281,20 @@ export default function StokTersediaDashboard({ user }: Props) {
     // Fetch data on component mount and when filters change
     useEffect(() => {
         fetchStockTersedia(
-            selectedMonth === 'all' ? undefined : selectedMonth,
-            selectedKios === 'all' ? undefined : selectedKios
+            selectedKios === 'all' ? undefined : selectedKios,
+            user.role === 'Assistant Area Manager' && selectedFA !== 'all' ? selectedFA : undefined,
+            startDate || undefined,
+            endDate || undefined,
         );
-    }, [selectedMonth, selectedKios]);
+    }, [selectedKios, selectedFA, startDate, endDate, user.role]);
 
-    // Fetch kios on component mount
+    // Fetch kios and users on component mount - hanya sekali
     useEffect(() => {
         fetchKios();
+        if (user.role === 'Assistant Area Manager') {
+            fetchUsers();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Use summary statistics from API (calculated from all data, not filtered)
@@ -244,7 +308,7 @@ export default function StokTersediaDashboard({ user }: Props) {
             <Head title="Stock Tersedia" />
 
             <AuthenticatedLayout>
-                <div className="rounded-md bg-white p-4 shadow-md dark:bg-gray-800 md:p-6">
+                <div className="rounded-md bg-white p-4 shadow-md md:p-6 dark:bg-gray-800">
                     <div className="mb-4 md:mb-6">
                         <h1 className="text-xl font-semibold md:text-2xl">Stock Tersedia</h1>
                         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
@@ -252,14 +316,10 @@ export default function StokTersediaDashboard({ user }: Props) {
                         </p>
                     </div>
 
-                    {error && (
-                        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                            {error}
-                        </div>
-                    )}
+                    {error && <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
                     {/* Summary Cards */}
-                    <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:mb-6">
+                    <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mb-6 lg:grid-cols-4">
                         <div className="rounded-md border bg-white p-4 shadow-sm dark:border-gray-600 dark:bg-gray-700">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -274,9 +334,7 @@ export default function StokTersediaDashboard({ user }: Props) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Total Stock Masuk</p>
-                                    <p className="mt-1 text-2xl font-semibold">
-                                        {totalMasuk.toLocaleString('id-ID')}
-                                    </p>
+                                    <p className="mt-1 text-2xl font-semibold">{totalMasuk.toLocaleString('id-ID')}</p>
                                 </div>
                                 <TrendingUp className="h-8 w-8 text-green-500" />
                             </div>
@@ -286,9 +344,7 @@ export default function StokTersediaDashboard({ user }: Props) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Total Stock Keluar</p>
-                                    <p className="mt-1 text-2xl font-semibold">
-                                        {totalKeluar.toLocaleString('id-ID')}
-                                    </p>
+                                    <p className="mt-1 text-2xl font-semibold">{totalKeluar.toLocaleString('id-ID')}</p>
                                 </div>
                                 <TrendingDown className="h-8 w-8 text-red-500" />
                             </div>
@@ -309,9 +365,33 @@ export default function StokTersediaDashboard({ user }: Props) {
 
                     {/* Filter */}
                     <Card className="mb-4 p-3 sm:p-4">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+                        <div
+                            className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${user.role === 'Assistant Area Manager' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} sm:gap-4`}
+                        >
+                            {user.role === 'Assistant Area Manager' && (
+                                <div className="w-full">
+                                    <Label htmlFor="fa" className="text-xs sm:text-sm">
+                                        Filter Nama FA
+                                    </Label>
+                                    <Select value={selectedFA} onValueChange={(value) => setSelectedFA(value)}>
+                                        <SelectTrigger id="fa" className="h-9 text-xs sm:text-sm">
+                                            <SelectValue placeholder="Pilih FA" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua FA</SelectItem>
+                                            {users.map((u) => (
+                                                <SelectItem key={u.id} value={u.id.toString()}>
+                                                    {u.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div className="w-full">
-                                <Label htmlFor="kios" className="text-xs sm:text-sm">Filter Kios</Label>
+                                <Label htmlFor="kios" className="text-xs sm:text-sm">
+                                    Filter Kios
+                                </Label>
                                 <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
                                     <SelectTrigger id="kios" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Kios" />
@@ -327,25 +407,34 @@ export default function StokTersediaDashboard({ user }: Props) {
                                 </Select>
                             </div>
                             <div className="w-full">
-                                <Label htmlFor="month" className="text-xs sm:text-sm">Filter Bulan</Label>
-                                <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
-                                    <SelectTrigger id="month" className="h-9 text-xs sm:text-sm">
-                                        <SelectValue placeholder="Pilih Bulan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {generateMonths().map((month) => (
-                                            <SelectItem key={month.value} value={month.value}>
-                                                {month.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="start_date" className="text-xs sm:text-sm">
+                                    Filter Start Date (Periode)
+                                </Label>
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="h-9 text-xs sm:text-sm"
+                                />
                             </div>
-                            <div className="w-full flex items-end">
+                            <div className="w-full">
+                                <Label htmlFor="end_date" className="text-xs sm:text-sm">
+                                    Filter End Date (Periode)
+                                </Label>
+                                <Input
+                                    id="end_date"
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="h-9 text-xs sm:text-sm"
+                                />
+                            </div>
+                            <div className="flex w-full items-end">
                                 <Button
                                     variant="outline"
                                     onClick={handleDownload}
-                                    className="flex items-center gap-2 w-full cursor-pointer h-9 text-xs sm:text-sm"
+                                    className="flex h-9 w-full cursor-pointer items-center gap-2 text-xs sm:text-sm"
                                 >
                                     <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                                     <span className="hidden sm:inline">Download Excel</span>
@@ -358,7 +447,7 @@ export default function StokTersediaDashboard({ user }: Props) {
                     {/* Search Bar */}
                     <div className="mb-4">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                             <Input
                                 type="text"
                                 placeholder="Cari berdasarkan nama produk atau kios..."
@@ -382,54 +471,55 @@ export default function StokTersediaDashboard({ user }: Props) {
                             </p>
                         </div>
                     ) : (
-                        <div className="w-full overflow-x-auto rounded-md border dark:border-gray-600 -mx-2 sm:-mx-4 md:mx-0">
+                        <div className="-mx-2 w-full overflow-x-auto rounded-md border sm:-mx-4 md:mx-0 dark:border-gray-600">
                             <div className="inline-block min-w-full align-middle">
                                 <Table className="w-full">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="min-w-[50px] text-xs sm:text-sm">No</TableHead>
-                                        <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">Produk</TableHead>
-                                        <TableHead className="min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Kemasan</TableHead>
-                                        <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">Satuan</TableHead>
-                                        <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">Kios</TableHead>
-                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Masuk</TableHead>
-                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Keluar</TableHead>
-                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Stock Tersedia</TableHead>
-                                        <TableHead className="text-center min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Bulan</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredStock.map((item, index) => (
-                                        <TableRow key={`${item.product_id}-${item.kios_id}`}>
-                                            <TableCell className="text-xs sm:text-sm">{index + 1}</TableCell>
-                                            <TableCell className="font-medium text-xs sm:text-sm">
-                                                {item.product?.nama || '-'}
-                                            </TableCell>
-                                            <TableCell className="text-xs sm:text-sm">{item.product?.kemasan || '-'}</TableCell>
-                                            <TableCell className="text-xs sm:text-sm">{item.product?.satuan || '-'}</TableCell>
-                                            <TableCell className="text-xs sm:text-sm">{item.kios?.nama || '-'}</TableCell>
-                                            <TableCell className="text-center text-green-600 dark:text-green-400 text-xs sm:text-sm">
-                                                {item.total_masuk.toLocaleString('id-ID')}
-                                            </TableCell>
-                                            <TableCell className="text-center text-red-600 dark:text-red-400 text-xs sm:text-sm">
-                                                {item.total_keluar.toLocaleString('id-ID')}
-                                            </TableCell>
-                                            <TableCell className="text-center font-semibold text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
-                                                {item.quantity_tersedia.toLocaleString('id-ID')}
-                                            </TableCell>
-                                            <TableCell className="text-center text-xs sm:text-sm">
-                                                {item.bulan 
-                                                    ? new Date(item.bulan + '-01').toLocaleDateString('id-ID', { 
-                                                        month: 'long', 
-                                                        year: 'numeric' 
-                                                    })
-                                                    : '-'
-                                                }
-                                            </TableCell>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="min-w-[50px] text-xs sm:text-sm">No</TableHead>
+                                            <TableHead className="min-w-[120px] text-xs sm:min-w-[150px] sm:text-sm">Produk</TableHead>
+                                            <TableHead className="min-w-[100px] text-xs sm:min-w-[120px] sm:text-sm">Kemasan</TableHead>
+                                            <TableHead className="min-w-[120px] text-xs sm:min-w-[150px] sm:text-sm">Kios</TableHead>
+                                            <TableHead className="min-w-[100px] text-center text-xs sm:min-w-[120px] sm:text-sm">
+                                                Stock Masuk
+                                            </TableHead>
+                                            <TableHead className="min-w-[100px] text-center text-xs sm:min-w-[120px] sm:text-sm">
+                                                Stock Keluar
+                                            </TableHead>
+                                            <TableHead className="min-w-[100px] text-center text-xs sm:min-w-[120px] sm:text-sm">
+                                                Stock Tersedia
+                                            </TableHead>
+                                            <TableHead className="min-w-[100px] text-center text-xs sm:min-w-[120px] sm:text-sm">Bulan</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredStock.map((item, index) => (
+                                            <TableRow key={`${item.product_id}-${item.kios_id}`}>
+                                                <TableCell className="text-xs sm:text-sm">{index + 1}</TableCell>
+                                                <TableCell className="text-xs font-medium sm:text-sm">{item.product?.nama || '-'}</TableCell>
+                                                <TableCell className="text-xs sm:text-sm">{item.product?.kemasan || '-'}</TableCell>
+                                                <TableCell className="text-xs sm:text-sm">{item.kios?.nama || '-'}</TableCell>
+                                                <TableCell className="text-center text-xs text-green-600 sm:text-sm dark:text-green-400">
+                                                    {item.total_masuk.toLocaleString('id-ID')}
+                                                </TableCell>
+                                                <TableCell className="text-center text-xs text-red-600 sm:text-sm dark:text-red-400">
+                                                    {item.total_keluar.toLocaleString('id-ID')}
+                                                </TableCell>
+                                                <TableCell className="text-center text-xs font-semibold text-blue-600 sm:text-sm dark:text-blue-400">
+                                                    {item.quantity_tersedia.toLocaleString('id-ID')}
+                                                </TableCell>
+                                                <TableCell className="text-center text-xs sm:text-sm">
+                                                    {item.bulan
+                                                        ? new Date(item.bulan + '-01').toLocaleDateString('id-ID', {
+                                                              month: 'long',
+                                                              year: 'numeric',
+                                                          })
+                                                        : '-'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </div>
                     )}
@@ -438,8 +528,8 @@ export default function StokTersediaDashboard({ user }: Props) {
                     <div className="mt-4 rounded-md bg-blue-50 p-4 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                         <p className="font-medium">Catatan:</p>
                         <p className="mt-1">
-                            Stock Tersedia dihitung secara otomatis dari selisih antara total Stock Masuk dan total Stock Keluar.
-                            Data ini bersifat read-only dan tidak dapat diedit atau dihapus.
+                            Stock Tersedia dihitung secara otomatis dari selisih antara total Stock Masuk dan total Stock Keluar. Data ini bersifat
+                            read-only dan tidak dapat diedit atau dihapus.
                         </p>
                     </div>
                 </div>

@@ -12,7 +12,9 @@ class StockKeluar extends Model
         'user_id',
         'kios_id',
         'product_id',
+        'qty_kemasan_id',
         'quantity',
+        'liter_or_kg',
         'tanggal',
         'is_deleted',
         'created_by',
@@ -46,6 +48,14 @@ class StockKeluar extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    /**
+     * Get the qty kemasan that owns the stock keluar.
+     */
+    public function qtyKemasan(): BelongsTo
+    {
+        return $this->belongsTo(QtyKemasan::class, 'qty_kemasan_id');
     }
 
     /**

@@ -1,19 +1,12 @@
-import { type User } from '@/types';
-import { Head } from '@inertiajs/react';
-import AuthenticatedLayout from '../../../layouts/authenticated-layout';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { type User } from '@/types';
+import { Head } from '@inertiajs/react';
+import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import AuthenticatedLayout from '../../../layouts/authenticated-layout';
 
 type Props = {
     user: User;
@@ -41,7 +34,7 @@ export default function DataProdukDashboard({ user }: Props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [formData, setFormData] = useState({ nama: '', kemasan: '', satuan: '' });
+    const [formData, setFormData] = useState({ nama: '', kemasan: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -100,7 +93,7 @@ export default function DataProdukDashboard({ user }: Props) {
             const payload = {
                 nama: formData.nama,
                 kemasan: formData.kemasan,
-                satuan: formData.satuan || null,
+                satuan: null,
             };
 
             const response = await fetch(url, {
@@ -122,7 +115,7 @@ export default function DataProdukDashboard({ user }: Props) {
             const result: ApiResponse<Product> = await response.json();
             if (result.success) {
                 setIsDialogOpen(false);
-                setFormData({ nama: '', kemasan: '', satuan: '' });
+                setFormData({ nama: '', kemasan: '' });
                 setSelectedProduct(null);
                 await fetchProducts();
             }
@@ -172,7 +165,7 @@ export default function DataProdukDashboard({ user }: Props) {
     // Open create dialog
     const openCreateDialog = () => {
         setSelectedProduct(null);
-        setFormData({ nama: '', kemasan: '', satuan: '' });
+        setFormData({ nama: '', kemasan: '' });
         setIsDialogOpen(true);
     };
 
@@ -182,7 +175,6 @@ export default function DataProdukDashboard({ user }: Props) {
         setFormData({
             nama: product.nama,
             kemasan: product.kemasan,
-            satuan: product.satuan || '',
         });
         setIsDialogOpen(true);
     };
@@ -198,27 +190,21 @@ export default function DataProdukDashboard({ user }: Props) {
             <Head title="Data Produk" />
 
             <AuthenticatedLayout>
-                <div className="rounded-md bg-white p-4 shadow-md dark:bg-gray-800 md:p-6">
+                <div className="rounded-md bg-white p-4 shadow-md md:p-6 dark:bg-gray-800">
                     <div className="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-center md:justify-between">
                         <div>
                             <h1 className="text-xl font-semibold md:text-2xl">Data Produk</h1>
-                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                                Kelola data produk yang tersedia dalam sistem.
-                            </p>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Kelola data produk yang tersedia dalam sistem.</p>
                         </div>
-                        {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                            <Button onClick={openCreateDialog} className="cursor-pointer gap-2 w-full sm:w-auto">
+                        {user.role === 'Assistant Area Manager' && (
+                            <Button onClick={openCreateDialog} className="w-full cursor-pointer gap-2 sm:w-auto">
                                 <Plus className="size-4" />
                                 Tambah Produk
                             </Button>
                         )}
                     </div>
 
-                    {error && (
-                        <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                            {error}
-                        </div>
-                    )}
+                    {error && <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
@@ -226,102 +212,99 @@ export default function DataProdukDashboard({ user }: Props) {
                             <span className="ml-2 text-gray-600 dark:text-gray-300">Memuat data...</span>
                         </div>
                     ) : (
-                        <div className="w-full overflow-x-auto rounded-md border dark:border-gray-700 -mx-2 sm:-mx-4 md:mx-0">
+                        <div className="-mx-2 w-full overflow-x-auto rounded-md border sm:-mx-4 md:mx-0 dark:border-gray-700">
                             <div className="inline-block min-w-full align-middle">
                                 <table className="w-full">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[50px]">
-                                            No
-                                        </th>
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[150px]">
-                                            Nama Produk
-                                        </th>
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
-                                            Kemasan
-                                        </th>
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
-                                            Satuan
-                                        </th>
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[120px]">
-                                            Dibuat
-                                        </th>
-                                        <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300 min-w-[100px]">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                                    {products.length === 0 ? (
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
                                         <tr>
-                                            <td colSpan={6} className="px-3 sm:px-6 py-8 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                                Tidak ada data produk
-                                            </td>
+                                            <th className="min-w-[50px] px-3 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase sm:px-6 dark:text-gray-300">
+                                                No
+                                            </th>
+                                            <th className="min-w-[150px] px-3 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase sm:px-6 dark:text-gray-300">
+                                                Nama Produk
+                                            </th>
+                                            <th className="min-w-[120px] px-3 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase sm:px-6 dark:text-gray-300">
+                                                Kemasan
+                                            </th>
+                                            <th className="min-w-[120px] px-3 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase sm:px-6 dark:text-gray-300">
+                                                Dibuat
+                                            </th>
+                                            <th className="min-w-[100px] px-3 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase sm:px-6 dark:text-gray-300">
+                                                Aksi
+                                            </th>
                                         </tr>
-                                    ) : (
-                                        products.map((item, index) => (
-                                            <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                    {item.nama}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                                    {item.kemasan}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                                    {item.satuan || '-'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                                    {new Date(item.created_at).toLocaleDateString('id-ID')}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 sm:px-6 py-4 text-center text-xs sm:text-sm font-medium">
-                                                    {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                                        <div className="flex justify-center gap-1 sm:gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => openEditDialog(item)}
-                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 cursor-pointer"
-                                                            >
-                                                                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => openDeleteDialog(item.id)}
-                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700 cursor-pointer"
-                                                            >
-                                                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    )}
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                                        {products.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={5}
+                                                    className="px-3 py-8 text-center text-xs text-gray-500 sm:px-6 sm:text-sm dark:text-gray-400"
+                                                >
+                                                    Tidak ada data produk
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ) : (
+                                            products.map((item, index) => (
+                                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                    <td className="px-3 py-4 text-xs whitespace-nowrap text-gray-900 sm:px-6 sm:text-sm dark:text-gray-100">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="px-3 py-4 text-xs font-medium whitespace-nowrap text-gray-900 sm:px-6 sm:text-sm dark:text-gray-100">
+                                                        {item.nama}
+                                                    </td>
+                                                    <td className="px-3 py-4 text-xs whitespace-nowrap text-gray-500 sm:px-6 sm:text-sm dark:text-gray-400">
+                                                        {item.kemasan}
+                                                    </td>
+                                                    <td className="px-3 py-4 text-xs whitespace-nowrap text-gray-500 sm:px-6 sm:text-sm dark:text-gray-400">
+                                                        {new Date(item.created_at).toLocaleDateString('id-ID')}
+                                                    </td>
+                                                    <td className="px-3 py-4 text-center text-xs font-medium whitespace-nowrap sm:px-6 sm:text-sm">
+                                                        {user.role === 'Assistant Area Manager' && (
+                                                            <div className="flex justify-center gap-1 sm:gap-2">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => openEditDialog(item)}
+                                                                    className="h-7 w-7 cursor-pointer p-0 sm:h-8 sm:w-8"
+                                                                >
+                                                                    <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => openDeleteDialog(item.id)}
+                                                                    className="h-7 w-7 cursor-pointer p-0 text-red-600 hover:text-red-700 sm:h-8 sm:w-8"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
 
                     {/* Create/Edit Dialog */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+                        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto p-4 sm:max-w-md sm:p-6">
                             <DialogHeader>
                                 <DialogTitle>{selectedProduct ? 'Edit Produk' : 'Tambah Produk Baru'}</DialogTitle>
                                 <DialogDescription>
-                                    {selectedProduct
-                                        ? 'Ubah informasi produk di bawah ini.'
-                                        : 'Masukkan informasi produk baru di bawah ini.'}
+                                    {selectedProduct ? 'Ubah informasi produk di bawah ini.' : 'Masukkan informasi produk baru di bawah ini.'}
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit}>
-                                <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
+                                <div className="grid gap-3 py-3 sm:gap-4 sm:py-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="nama" className="text-xs sm:text-sm">Nama Produk</Label>
+                                        <Label htmlFor="nama" className="text-xs sm:text-sm">
+                                            Nama Produk
+                                        </Label>
                                         <Input
                                             id="nama"
                                             value={formData.nama}
@@ -332,7 +315,9 @@ export default function DataProdukDashboard({ user }: Props) {
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="kemasan" className="text-xs sm:text-sm">Kemasan</Label>
+                                        <Label htmlFor="kemasan" className="text-xs sm:text-sm">
+                                            Kemasan
+                                        </Label>
                                         <Input
                                             id="kemasan"
                                             value={formData.kemasan}
@@ -342,35 +327,25 @@ export default function DataProdukDashboard({ user }: Props) {
                                             className="text-xs sm:text-sm"
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="satuan" className="text-xs sm:text-sm">Satuan (Opsional)</Label>
-                                        <Input
-                                            id="satuan"
-                                            value={formData.satuan}
-                                            onChange={(e) => setFormData({ ...formData, satuan: e.target.value })}
-                                            placeholder="Masukkan satuan"
-                                            className="text-xs sm:text-sm"
-                                        />
-                                    </div>
                                 </div>
-                                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                                <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-0">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => {
                                             setIsDialogOpen(false);
-                                            setFormData({ nama: '', kemasan: '', satuan: '' });
+                                            setFormData({ nama: '', kemasan: '' });
                                             setSelectedProduct(null);
                                         }}
                                         disabled={isSubmitting}
-                                        className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm"
+                                        className="w-full cursor-pointer text-xs sm:w-auto sm:text-sm"
                                     >
                                         Batal
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm">
+                                    <Button type="submit" disabled={isSubmitting} className="w-full cursor-pointer text-xs sm:w-auto sm:text-sm">
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                                <Loader2 className="mr-2 h-3 w-3 animate-spin sm:h-4 sm:w-4" />
                                                 Menyimpan...
                                             </>
                                         ) : (
@@ -404,13 +379,7 @@ export default function DataProdukDashboard({ user }: Props) {
                                 >
                                     Batal
                                 </Button>
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    onClick={handleDelete}
-                                    disabled={isSubmitting}
-                                    className="cursor-pointer"
-                                >
+                                <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting} className="cursor-pointer">
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="mr-2 size-4 animate-spin" />

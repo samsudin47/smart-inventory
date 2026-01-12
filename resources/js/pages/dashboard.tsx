@@ -25,7 +25,7 @@ export default function Dashboard() {
                         <div
                             className="absolute inset-0 opacity-20 dark:opacity-30 rounded-xl pointer-events-none"
                             style={{
-                                backgroundImage: 'url(/public/smart-inventory.PNG)',
+                                backgroundImage: 'url(/smart-inventory.PNG)',
                                 backgroundSize: '50%',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',

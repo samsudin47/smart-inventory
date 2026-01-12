@@ -33,14 +33,24 @@ class StockTersediaController extends Controller
      */
     public function apiIndex(Request $request): JsonResponse
     {
+        // Filter by user_id if provided (for Assistant Area Manager)
+        $userId = null;
+        if ($request->has('user_id') && $request->user_id && $request->user_id !== 'all') {
+            $userId = (int) $request->user_id;
+        }
+
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
-        // Assistant Area Manager bisa melihat semua (ALL access)
+        // Assistant Area Manager bisa melihat semua (ALL access) atau filter by user_id
         if (Auth::user()->role === 'Field Assistant') {
             // Calculate stock tersedia based on user's own stock_masuk and stock_keluar only
             $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser(Auth::id());
         } elseif (Auth::user()->role === 'Assistant Area Manager') {
-            // Assistant Area Manager bisa melihat semua (no filter) - ALL access
-            $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+            // Assistant Area Manager bisa melihat semua atau filter by user_id
+            if ($userId) {
+                $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser($userId);
+            } else {
+                $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+            }
         } else {
             // Default: jika role tidak dikenal, return empty
             $stockTersedia = collect();
@@ -53,25 +63,39 @@ class StockTersediaController extends Controller
             })->values();
         }
 
-        // Filter by month if provided
-        if ($request->has('month') && $request->month && $request->month !== 'all') {
+        // Filter by periode (start_date and end_date)
+        if ($request->has('start_date') && $request->start_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m', $request->month);
-                $startDate = $date->copy()->startOfMonth();
-                $endDate = $date->copy()->endOfMonth();
-                
-                // Filter by bulan (latest_date) column
-                $stockTersedia = $stockTersedia->filter(function ($item) use ($startDate, $endDate) {
+                $startDate = Carbon::createFromFormat('Y-m-d', $request->start_date)->startOfDay();
+                $stockTersedia = $stockTersedia->filter(function ($item) use ($startDate) {
                     if (!$item['latest_date']) {
                         return false;
                     }
                     $itemDate = Carbon::parse($item['latest_date']);
-                    return $itemDate->between($startDate, $endDate);
+                    return $itemDate->gte($startDate);
                 })->values();
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Format bulan tidak valid. Gunakan format Y-m (contoh: 2025-12)'
+                    'message' => 'Format start date tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
+                ], 400);
+            }
+        }
+
+        if ($request->has('end_date') && $request->end_date) {
+            try {
+                $endDate = Carbon::createFromFormat('Y-m-d', $request->end_date)->endOfDay();
+                $stockTersedia = $stockTersedia->filter(function ($item) use ($endDate) {
+                    if (!$item['latest_date']) {
+                        return false;
+                    }
+                    $itemDate = Carbon::parse($item['latest_date']);
+                    return $itemDate->lte($endDate);
+                })->values();
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format end date tidak valid. Gunakan format Y-m-d (contoh: 2025-12-20)'
                 ], 400);
             }
         }
@@ -240,14 +264,24 @@ class StockTersediaController extends Controller
      */
     public function apiDownload(Request $request): StreamedResponse
     {
+        // Filter by user_id if provided (for Assistant Area Manager)
+        $userId = null;
+        if ($request->has('user_id') && $request->user_id && $request->user_id !== 'all') {
+            $userId = (int) $request->user_id;
+        }
+
         // Filter by user role: Field Assistant hanya bisa melihat aktivitas mereka sendiri
-        // Assistant Area Manager bisa melihat semua (ALL access)
+        // Assistant Area Manager bisa melihat semua (ALL access) atau filter by user_id
         if (Auth::user()->role === 'Field Assistant') {
             // Calculate stock tersedia based on user's own stock_masuk and stock_keluar only
             $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser(Auth::id());
         } elseif (Auth::user()->role === 'Assistant Area Manager') {
-            // Assistant Area Manager bisa melihat semua (no filter) - ALL access
-            $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+            // Assistant Area Manager bisa melihat semua atau filter by user_id
+            if ($userId) {
+                $stockTersedia = StockTersedia::getAggregatedStockTersediaByUser($userId);
+            } else {
+                $stockTersedia = StockTersedia::getAggregatedStockTersedia();
+            }
         } else {
             // Default: jika role tidak dikenal, return empty
             $stockTersedia = collect();
@@ -265,25 +299,41 @@ class StockTersediaController extends Controller
             }
         }
 
-        // Filter by month if provided
-        $monthFilter = '';
-        if ($request->has('month') && $request->month && $request->month !== 'all') {
+        // Filter by periode (start_date and end_date)
+        $periodeFilter = '';
+        if ($request->has('start_date') && $request->start_date) {
             try {
-                $date = Carbon::createFromFormat('Y-m', $request->month);
-                $startDate = $date->copy()->startOfMonth();
-                $endDate = $date->copy()->endOfMonth();
-                $monthFilter = $date->format('F Y');
-                
-                // Filter by bulan (latest_date) column
-                $stockTersedia = $stockTersedia->filter(function ($item) use ($startDate, $endDate) {
+                $startDate = Carbon::createFromFormat('Y-m-d', $request->start_date)->startOfDay();
+                $periodeFilter = Carbon::parse($request->start_date)->format('d F Y');
+                $stockTersedia = $stockTersedia->filter(function ($item) use ($startDate) {
                     if (!$item['latest_date']) {
                         return false;
                     }
                     $itemDate = Carbon::parse($item['latest_date']);
-                    return $itemDate->between($startDate, $endDate);
+                    return $itemDate->gte($startDate);
                 })->values();
             } catch (\Exception $e) {
-                abort(400, 'Format bulan tidak valid');
+                abort(400, 'Format start date tidak valid');
+            }
+        }
+
+        if ($request->has('end_date') && $request->end_date) {
+            try {
+                $endDate = Carbon::createFromFormat('Y-m-d', $request->end_date)->endOfDay();
+                if ($periodeFilter) {
+                    $periodeFilter .= ' - ' . Carbon::parse($request->end_date)->format('d F Y');
+                } else {
+                    $periodeFilter = Carbon::parse($request->end_date)->format('d F Y');
+                }
+                $stockTersedia = $stockTersedia->filter(function ($item) use ($endDate) {
+                    if (!$item['latest_date']) {
+                        return false;
+                    }
+                    $itemDate = Carbon::parse($item['latest_date']);
+                    return $itemDate->lte($endDate);
+                })->values();
+            } catch (\Exception $e) {
+                abort(400, 'Format end date tidak valid');
             }
         }
 
@@ -295,8 +345,8 @@ class StockTersediaController extends Controller
         if ($kiosFilter) {
             $titleParts[] = $kiosFilter;
         }
-        if ($monthFilter) {
-            $titleParts[] = $monthFilter;
+        if ($periodeFilter) {
+            $titleParts[] = $periodeFilter;
         }
         $title = count($titleParts) > 0 
             ? "Stock Tersedia - " . implode(' - ', $titleParts)

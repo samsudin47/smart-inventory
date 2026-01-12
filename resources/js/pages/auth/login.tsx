@@ -28,7 +28,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const [role, setRole] = useState<string>('');
 
     return (
-        <AuthLayout title="Log in to your account Smart-Inventory" description="Enter your email and password below to log in">
+        <AuthLayout title="Log in to your account The Architects" description="Enter your email and password below to log in">
             <Head title="Log in" />
 
             <Form {...AuthenticatedSessionController.store.form()} resetOnSuccess={['password']} className="flex flex-col gap-6">

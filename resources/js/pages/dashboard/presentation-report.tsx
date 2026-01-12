@@ -3,13 +3,8 @@ import { Head } from '@inertiajs/react';
 import AuthenticatedLayout from '../../layouts/authenticated-layout';
 import { useState, useEffect, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import {
@@ -39,6 +34,7 @@ type ReportData = {
     label: string;
     total_quantity: number;
     total_transactions: number;
+    [key: string]: any; // For dynamic kemasan fields (kemasan_1, kemasan_2, etc.)
 };
 
 type Product = {
@@ -51,6 +47,11 @@ type Product = {
 type Kios = {
     id: number;
     nama: string;
+};
+
+type QtyKemasan = {
+    id: number;
+    qty_kemasan: number;
 };
 
 type ApiResponse<T> = {
@@ -66,13 +67,16 @@ export default function PresentationReport({ user }: Props) {
     const [error, setError] = useState<string | null>(null);
     
     // Filter states
-    const [period, setPeriod] = useState<'30_hari_sebelumnya' | 'per_hari' | 'per_minggu' | 'per_bulan'>('30_hari_sebelumnya');
-    const [productId, setProductId] = useState<string>('');
-    const [kiosId, setKiosId] = useState<string>('');
+    const [productIds, setProductIds] = useState<string[]>([]);
+    const [kiosIds, setKiosIds] = useState<string[]>([]);
+    const [kemasanIds, setKemasanIds] = useState<string[]>([]);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
     
     // Options for filters
     const [products, setProducts] = useState<Product[]>([]);
     const [kios, setKios] = useState<Kios[]>([]);
+    const [kemasan, setKemasan] = useState<QtyKemasan[]>([]);
 
     // Helper untuk mendapatkan CSRF token
     const getCsrfToken = () => {
@@ -128,6 +132,30 @@ export default function PresentationReport({ user }: Props) {
         }
     };
 
+    // Fetch kemasan
+    const fetchKemasan = async () => {
+        try {
+            const response = await fetch('/api/qty-kemasan', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                const result: ApiResponse<QtyKemasan[]> = await response.json();
+                if (result.success) {
+                    setKemasan(result.data);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching kemasan:', err);
+        }
+    };
+
     // Fetch report data
     const fetchReportData = useCallback(async () => {
         try {
@@ -136,12 +164,26 @@ export default function PresentationReport({ user }: Props) {
 
             const params = new URLSearchParams();
             params.append('type', 'penjualan'); // Default to penjualan
-            params.append('period', period);
-            if (productId) {
-                params.append('product_id', productId);
+            if (productIds.length > 0) {
+                productIds.forEach((id) => {
+                    params.append('product_id[]', id);
+                });
             }
-            if (kiosId) {
-                params.append('kios_id', kiosId);
+            if (kiosIds.length > 0) {
+                kiosIds.forEach((id) => {
+                    params.append('kios_id[]', id);
+                });
+            }
+            if (kemasanIds.length > 0) {
+                kemasanIds.forEach((id) => {
+                    params.append('qty_kemasan_id[]', id);
+                });
+            }
+            if (startDate) {
+                params.append('start_date', startDate);
+            }
+            if (endDate) {
+                params.append('end_date', endDate);
             }
 
             const response = await fetch(`/api/presentation-report?${params.toString()}`, {
@@ -170,17 +212,18 @@ export default function PresentationReport({ user }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [period, productId, kiosId]);
+    }, [productIds, kiosIds, kemasanIds, startDate, endDate]);
 
     // Fetch data when filters change
     useEffect(() => {
         fetchReportData();
     }, [fetchReportData]);
 
-    // Fetch products and kios on mount
+    // Fetch products, kios, and kemasan on mount
     useEffect(() => {
         fetchProducts();
         fetchKios();
+        fetchKemasan();
     }, []);
 
     // Format number with thousand separator
@@ -191,12 +234,76 @@ export default function PresentationReport({ user }: Props) {
         }).format(num);
     };
 
+    // Get kemasan IDs from report data (extract from kemasan_X keys)
+    const getKemasanIdsFromData = (): string[] => {
+        if (reportData.length === 0) return [];
+        
+        const kemasanKeys = Object.keys(reportData[0]).filter(key => key.startsWith('kemasan_'));
+        return kemasanKeys.map(key => key.replace('kemasan_', ''));
+    };
+
+    // Get kemasan info by ID
+    const getKemasanInfo = (id: string) => {
+        return kemasan.find(k => String(k.id) === id);
+    };
+
+    // Get product info by ID
+    const getProductInfo = (id: string) => {
+        return products.find(p => String(p.id) === id);
+    };
+
+    // Get product names for selected products
+    const getProductNames = (): string => {
+        if (productIds.length === 0) return '';
+        if (productIds.length === 1) {
+            const product = getProductInfo(productIds[0]);
+            return product ? product.nama : '';
+        }
+        // Multiple products
+        const names = productIds
+            .map(id => {
+                const product = getProductInfo(id);
+                return product ? product.nama : '';
+            })
+            .filter(name => name !== '')
+            .join(', ');
+        return names;
+    };
+
+    // Color palette for different kemasan
+    const colors = [
+        '#3b82f6', // blue
+        '#ef4444', // red
+        '#10b981', // green
+        '#f59e0b', // amber
+        '#8b5cf6', // purple
+        '#ec4899', // pink
+        '#06b6d4', // cyan
+        '#84cc16', // lime
+        '#f97316', // orange
+        '#6366f1', // indigo
+    ];
+
+    // Get active kemasan IDs: use filter if selected, otherwise use from data
+    const activeKemasanIds = kemasanIds.length > 0 
+        ? kemasanIds 
+        : getKemasanIdsFromData();
+
     // Prepare chart data
-    const chartData = reportData.map((item) => ({
-        name: item.label,
-        quantity: item.total_quantity,
-        transactions: item.total_transactions,
-    }));
+    const chartData = reportData.map((item) => {
+        const data: any = {
+            name: item.label,
+            quantity: item.total_quantity,
+            transactions: item.total_transactions,
+        };
+        
+        // Add kemasan data if available
+        activeKemasanIds.forEach((kemasanId) => {
+            data[`kemasan_${kemasanId}`] = item[`kemasan_${kemasanId}`] || 0;
+        });
+        
+        return data;
+    });
 
     return (
         <>
@@ -216,59 +323,67 @@ export default function PresentationReport({ user }: Props) {
 
                     {/* Filters */}
                     <Card className="p-3 sm:p-4">
-                        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            <div>
-                                <Label htmlFor="period">Periode</Label>
-                                <Select
-                                    value={period}
-                                    onValueChange={(value: '30_hari_sebelumnya' | 'per_hari' | 'per_minggu' | 'per_bulan') =>
-                                        setPeriod(value)
-                                    }
-                                >
-                                    <SelectTrigger id="period">
-                                        <SelectValue placeholder="Pilih Periode" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="30_hari_sebelumnya">30 Hari Sebelumnya</SelectItem>
-                                        <SelectItem value="per_hari">Per Hari</SelectItem>
-                                        <SelectItem value="per_minggu">Per Minggu</SelectItem>
-                                        <SelectItem value="per_bulan">Per Bulan</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-5">
                             <div>
                                 <Label htmlFor="product">Produk (Opsional)</Label>
-                                <Select value={productId || 'all'} onValueChange={(value) => setProductId(value === 'all' ? '' : value)}>
-                                    <SelectTrigger id="product">
-                                        <SelectValue placeholder="Semua Produk" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Produk</SelectItem>
-                                        {products.map((product) => (
-                                            <SelectItem key={product.id} value={String(product.id)}>
-                                                {product.nama}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <MultiSelect
+                                    id="product"
+                                    options={products.map((product) => ({
+                                        value: String(product.id),
+                                        label: product.nama,
+                                    }))}
+                                    selected={productIds}
+                                    onSelectionChange={setProductIds}
+                                    placeholder="Semua Produk"
+                                />
                             </div>
 
                             <div>
                                 <Label htmlFor="kios">Kios (Opsional)</Label>
-                                <Select value={kiosId || 'all'} onValueChange={(value) => setKiosId(value === 'all' ? '' : value)}>
-                                    <SelectTrigger id="kios">
-                                        <SelectValue placeholder="Semua Kios" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Kios</SelectItem>
-                                        {kios.map((k) => (
-                                            <SelectItem key={k.id} value={String(k.id)}>
-                                                {k.nama}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <MultiSelect
+                                    id="kios"
+                                    options={kios.map((k) => ({
+                                        value: String(k.id),
+                                        label: k.nama,
+                                    }))}
+                                    selected={kiosIds}
+                                    onSelectionChange={setKiosIds}
+                                    placeholder="Semua Kios"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="kemasan">Kemasan (Opsional)</Label>
+                                <MultiSelect
+                                    id="kemasan"
+                                    options={kemasan.map((k) => ({
+                                        value: String(k.id),
+                                        label: `${k.qty_kemasan} ml`,
+                                    }))}
+                                    selected={kemasanIds}
+                                    onSelectionChange={setKemasanIds}
+                                    placeholder="Semua Kemasan"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="start_date">Filter Start Date (Periode)</Label>
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="end_date">Filter End Date (Periode)</Label>
+                                <Input
+                                    id="end_date"
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
                             </div>
                         </div>
                     </Card>
@@ -295,10 +410,22 @@ export default function PresentationReport({ user }: Props) {
                             <ResponsiveContainer width="100%" height={400}>
                                 <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                     <defs>
-                                        <linearGradient id="colorQuantity" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                        </linearGradient>
+                                        {activeKemasanIds.length > 0 ? (
+                                            activeKemasanIds.map((kemasanId, index) => {
+                                                const color = colors[index % colors.length];
+                                                return (
+                                                    <linearGradient key={kemasanId} id={`colorKemasan${kemasanId}`} x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                                                    </linearGradient>
+                                                );
+                                            })
+                                        ) : (
+                                            <linearGradient id="colorQuantity" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        )}
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                                     <XAxis
@@ -320,17 +447,66 @@ export default function PresentationReport({ user }: Props) {
                                             border: '1px solid var(--border)',
                                             borderRadius: '6px',
                                         }}
-                                        formatter={(value: number) => formatNumber(value)}
+                                        formatter={(value: number, name: string) => {
+                                            const formattedValue = formatNumber(value);
+                                            // If product filter is active, tooltip already shows product name in legend
+                                            // The formatter just formats the number
+                                            return formattedValue;
+                                        }}
+                                        labelFormatter={(label) => {
+                                            const productNames = getProductNames();
+                                            if (productNames && productIds.length === 1) {
+                                                return `${label} - ${productNames}`;
+                                            }
+                                            return label;
+                                        }}
                                     />
                                     <Legend />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="quantity"
-                                        stroke="#3b82f6"
-                                        fillOpacity={1}
-                                        fill="url(#colorQuantity)"
-                                        name="Quantity"
-                                    />
+                                    {activeKemasanIds.length > 0 ? (
+                                        // Render multiple Area for each kemasan
+                                        activeKemasanIds.map((kemasanId, index) => {
+                                            const kemasanInfo = getKemasanInfo(kemasanId);
+                                            const color = colors[index % colors.length];
+                                            const productNames = getProductNames();
+                                            
+                                            // Build label: include product name if available
+                                            let label = kemasanInfo 
+                                                ? `${kemasanInfo.qty_kemasan} ml` 
+                                                : `Kemasan ${kemasanId}`;
+                                            
+                                            if (productNames) {
+                                                if (productIds.length === 1) {
+                                                    // Single product: "Produk A - 100 ml"
+                                                    label = `${productNames} - ${label}`;
+                                                } else {
+                                                    // Multiple products: "100 ml (Produk A, Produk B)"
+                                                    label = `${label} (${productNames})`;
+                                                }
+                                            }
+                                            
+                                            return (
+                                                <Area
+                                                    key={kemasanId}
+                                                    type="monotone"
+                                                    dataKey={`kemasan_${kemasanId}`}
+                                                    stroke={color}
+                                                    fillOpacity={1}
+                                                    fill={`url(#colorKemasan${kemasanId})`}
+                                                    name={label}
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        // Default single Area if no kemasan filter
+                                        <Area
+                                            type="monotone"
+                                            dataKey="quantity"
+                                            stroke="#3b82f6"
+                                            fillOpacity={1}
+                                            fill="url(#colorQuantity)"
+                                            name={getProductNames() || "Quantity"}
+                                        />
+                                    )}
                                 </AreaChart>
                             </ResponsiveContainer>
                         )}

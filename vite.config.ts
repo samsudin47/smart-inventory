@@ -35,26 +35,17 @@ if (shouldUseWayfinder) {
     plugins.push(
         wayfinder({
             formVariants: true,
+            // Try to use PHP from PATH, or skip if not found
+            php: process.env.PHP_BINARY || 'php',
+            // Ensure command runs from project root
+            cwd: process.cwd(),
         }),
     );
 }
 
 export default defineConfig(({ mode }) => {
-    // Skip wayfinder in production mode
-    const skipWayfinderInMode = mode === 'production';
-    const finalShouldUseWayfinder = skipWayfinderInMode ? false : shouldUseWayfinder;
-
-    const finalPlugins = [...plugins];
-    if (finalShouldUseWayfinder) {
-        finalPlugins.push(
-            wayfinder({
-                formVariants: true,
-            }),
-        );
-    }
-
     return {
-        plugins: finalPlugins,
+        plugins,
         esbuild: {
             jsx: 'automatic',
         },

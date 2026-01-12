@@ -18,7 +18,7 @@ Route::get('/', function () {
 Route::get('/storage/stock_masuk/nota/{filename}', function ($filename) {
     // Security: sanitize filename to prevent directory traversal
     $filename = basename($filename);
-    
+
     $filePath = storage_path('app/public/stock_masuk/nota/' . $filename);
 
     // Security: prevent directory traversal
@@ -161,18 +161,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // API Routes untuk Product
         Route::get('/product', [App\Http\Controllers\ProductController::class, 'apiIndex'])->name('api.product.index');
         Route::get('/product/{product}', [App\Http\Controllers\ProductController::class, 'apiShow'])->name('api.product.show');
-        Route::post('/product', [App\Http\Controllers\ProductController::class, 'apiStore'])->name('api.product.store');
-        Route::put('/product/{product}', [App\Http\Controllers\ProductController::class, 'apiUpdate'])->name('api.product.update');
-        Route::delete('/product/{product}', [App\Http\Controllers\ProductController::class, 'apiDestroy'])->name('api.product.destroy');
+
+        // API Routes untuk Qty Kemasan
+        Route::get('/qty-kemasan', [App\Http\Controllers\QtyKemasanController::class, 'apiIndex'])->name('api.qty-kemasan.index');
+
+        // API Routes untuk Product - hanya Assistant Area Manager yang bisa create, update, delete
+        Route::middleware('role:Assistant Area Manager')->group(function () {
+            Route::post('/product', [App\Http\Controllers\ProductController::class, 'apiStore'])->name('api.product.store');
+            Route::put('/product/{product}', [App\Http\Controllers\ProductController::class, 'apiUpdate'])->name('api.product.update');
+            Route::delete('/product/{product}', [App\Http\Controllers\ProductController::class, 'apiDestroy'])->name('api.product.destroy');
+        });
+
+        // API Route untuk dropdown users (bisa diakses oleh Field Assistant dan Assistant Area Manager)
+        // Harus diletakkan sebelum route /petugas/{user} untuk menghindari konflik
+        Route::get('/petugas/dropdown', [App\Http\Controllers\PetugasController::class, 'apiForDropdown'])->name('api.petugas.dropdown');
 
         // API Routes untuk Petugas (Users) - hanya Assistant Area Manager
         Route::middleware('role:Assistant Area Manager')->group(function () {
             Route::get('/petugas', [App\Http\Controllers\PetugasController::class, 'apiIndex'])->name('api.petugas.index');
             Route::get('/petugas/{user}', [App\Http\Controllers\PetugasController::class, 'apiShow'])->name('api.petugas.show');
         });
-
-        // API Route untuk dropdown users (bisa diakses oleh Field Assistant dan Assistant Area Manager)
-        Route::get('/petugas/dropdown', [App\Http\Controllers\PetugasController::class, 'apiForDropdown'])->name('api.petugas.dropdown');
 
         // API Routes untuk Stock Masuk
         Route::get('/stock-masuk', [App\Http\Controllers\StockMasukController::class, 'apiIndex'])->name('api.stock-masuk.index');

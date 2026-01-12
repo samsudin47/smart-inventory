@@ -8,7 +8,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DataKios extends Model
 {
     protected $table = 'master_kios';
-    protected $fillable = ['nama', 'is_deleted', 'created_by', 'updated_by'];
+    protected $fillable = [
+        'nama',
+        'desa',
+        'kecamatan',
+        'kabupaten',
+        'nama_pemilik',
+        'no_hp',
+        'cluster_kios',
+        'is_deleted',
+        'created_by',
+        'updated_by',
+    ];
 
     protected $casts = [
         'is_deleted' => 'boolean',

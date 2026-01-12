@@ -22,6 +22,13 @@ type UserData = {
     role: string;
 };
 
+type FA = {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+};
+
 type Kios = {
     id: number;
     nama: string;
@@ -34,12 +41,19 @@ type Product = {
     satuan: string | null;
 };
 
+type QtyKemasan = {
+    id: number;
+    qty_kemasan: number;
+};
+
 type StockMasuk = {
     id: number;
     user_id: number;
     kios_id: number;
     product_id: number;
+    qty_kemasan_id: number | null;
     quantity: number;
+    liter_or_kg: string | null;
     tanggal: string;
     foto_nota: string | null;
     foto_nota_url: string | null;
@@ -48,6 +62,7 @@ type StockMasuk = {
     user: UserData;
     kios: Kios;
     product: Product;
+    qty_kemasan: QtyKemasan | null;
 };
 
 type ApiResponse<T> = {
@@ -60,6 +75,8 @@ export default function StokMasukDashboard({ user }: Props) {
     const [stockMasuk, setStockMasuk] = useState<StockMasuk[]>([]);
     const [kios, setKios] = useState<Kios[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
+    const [users, setUsers] = useState<FA[]>([]);
+    const [qtyKemasan, setQtyKemasan] = useState<QtyKemasan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -69,8 +86,9 @@ export default function StokMasukDashboard({ user }: Props) {
         user_id: user.id.toString(),
         kios_id: '',
         product_id: '',
+        qty_kemasan_id: '',
         quantity: '',
-        satuan: '',
+        liter_or_kg: '',
         tanggal: new Date().toISOString().split('T')[0],
         foto_nota: null as File | null,
     });
@@ -82,28 +100,10 @@ export default function StokMasukDashboard({ user }: Props) {
     const [imageLoadError, setImageLoadError] = useState(false);
     const imageErrorHandled = useRef(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const [selectedKios, setSelectedKios] = useState<string>('all');
-    const [selectedDate, setSelectedDate] = useState<string>('all');
-    const [selectedYear, setSelectedYear] = useState<string>('all');
-
-    // Auto-fill satuan when product_id changes
-    useEffect(() => {
-        if (formData.product_id) {
-            const selectedProduct = products.find((p) => p.id.toString() === formData.product_id);
-            if (selectedProduct) {
-                setFormData((prev) => ({
-                    ...prev,
-                    satuan: selectedProduct.satuan || '',
-                }));
-            }
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                satuan: '',
-            }));
-        }
-    }, [formData.product_id, products]);
+    const [selectedFA, setSelectedFA] = useState<string>('all');
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     // Helper untuk mendapatkan CSRF token
     const getCsrfToken = (): string => {
@@ -116,46 +116,8 @@ export default function StokMasukDashboard({ user }: Props) {
         return token;
     };
 
-    // Generate months for select
-    const generateMonths = () => {
-        const months = [{ value: 'all', label: 'Semua Bulan' }];
-        const currentDate = new Date();
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthName = date.toLocaleDateString('id-ID', { month: 'long' });
-            months.push({ value: monthKey, label: monthName });
-        }
-        return months;
-    };
-
-    // Generate years for select
-    const generateYears = () => {
-        const years = [{ value: 'all', label: 'Semua Tahun' }];
-        const currentYear = new Date().getFullYear();
-        for (let i = 0; i < 5; i++) {
-            const year = currentYear - i;
-            years.push({ value: year.toString(), label: year.toString() });
-        }
-        return years;
-    };
-
-    // Generate dates for select (last 30 days)
-    const generateDates = () => {
-        const dates = [{ value: 'all', label: 'Semua Tanggal' }];
-        const currentDate = new Date();
-        for (let i = 0; i < 30; i++) {
-            const date = new Date(currentDate);
-            date.setDate(date.getDate() - i);
-            const dateKey = date.toISOString().split('T')[0];
-            const day = date.getDate();
-            dates.push({ value: dateKey, label: day.toString() });
-        }
-        return dates;
-    };
-
     // Fetch data dari API
-    const fetchStockMasuk = async (month?: string, kiosId?: string, date?: string, year?: string) => {
+    const fetchStockMasuk = async (kiosId?: string, userId?: string, startDate?: string, endDate?: string) => {
         try {
             setLoading(true);
             setError(null);
@@ -163,14 +125,14 @@ export default function StokMasukDashboard({ user }: Props) {
             if (kiosId && kiosId !== 'all') {
                 params.append('kios_id', kiosId);
             }
-            if (month && month !== 'all') {
-                params.append('month', month);
+            if (userId && userId !== 'all') {
+                params.append('user_id', userId);
             }
-            if (date && date !== 'all') {
-                params.append('date', date);
+            if (startDate) {
+                params.append('start_date', startDate);
             }
-            if (year && year !== 'all') {
-                params.append('year', year);
+            if (endDate) {
+                params.append('end_date', endDate);
             }
 
             const csrfToken = getCsrfToken();
@@ -289,16 +251,118 @@ export default function StokMasukDashboard({ user }: Props) {
         }
     };
 
+    // Fetch qty kemasan
+    const fetchQtyKemasan = async () => {
+        try {
+            const csrfToken = getCsrfToken();
+            const response = await fetch('/api/qty-kemasan', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'include',
+            });
+
+            if (response.status === 419) {
+                console.error('CSRF token mismatch saat mengambil data qty kemasan');
+                return;
+            }
+
+            if (response.ok) {
+                try {
+                    const result: ApiResponse<QtyKemasan[]> = await response.json();
+                    if (result.success) {
+                        setQtyKemasan(result.data);
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing qty kemasan response:', parseError);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching qty kemasan:', err);
+        }
+    };
+
+    // Fetch users (FA) - hanya untuk Assistant Area Manager
+    const fetchUsers = async () => {
+        if (user.role !== 'Assistant Area Manager') {
+            return; // Field Assistant tidak perlu fetch users
+        }
+
+        try {
+            const csrfToken = getCsrfToken();
+            if (!csrfToken) {
+                console.error('CSRF token tidak ditemukan');
+                return;
+            }
+
+            const response = await fetch('/api/petugas/dropdown', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (response.status === 419) {
+                console.error('CSRF token mismatch saat mengambil data users');
+                return;
+            }
+
+            if (!response.ok) {
+                // Jangan log error untuk 404 - route mungkin belum terdaftar atau ada masalah dengan middleware
+                if (response.status !== 404) {
+                    console.error('Error fetching users:', response.status, response.statusText);
+                }
+                return;
+            }
+
+            try {
+                const result: ApiResponse<FA[]> = await response.json();
+                if (result.success) {
+                    setUsers(result.data);
+                } else {
+                    console.warn('Failed to fetch users:', result.message);
+                }
+            } catch (parseError) {
+                console.error('Error parsing users response:', parseError);
+            }
+        } catch (err) {
+            // Hanya log error jika bukan network error yang diharapkan
+            if (err instanceof TypeError && err.message.includes('fetch')) {
+                console.warn('Network error saat mengambil data users');
+            } else {
+                console.error('Error fetching users:', err);
+            }
+        }
+    };
+
+    // Fetch initial data (kios, products, qty kemasan, users) - hanya sekali saat mount
     useEffect(() => {
-        fetchStockMasuk(
-            selectedMonth === 'all' ? undefined : selectedMonth,
-            selectedKios === 'all' ? undefined : selectedKios,
-            selectedDate === 'all' ? undefined : selectedDate,
-            selectedYear === 'all' ? undefined : selectedYear
-        );
         fetchKios();
         fetchProducts();
-    }, [selectedMonth, selectedKios, selectedDate, selectedYear]);
+        fetchQtyKemasan();
+        if (user.role === 'Assistant Area Manager') {
+            fetchUsers();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Fetch stock data saat filter berubah
+    useEffect(() => {
+        fetchStockMasuk(
+            selectedKios === 'all' ? undefined : selectedKios,
+            user.role === 'Assistant Area Manager' && selectedFA !== 'all' ? selectedFA : undefined,
+            startDate || undefined,
+            endDate || undefined,
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedKios, selectedFA, startDate, endDate]);
 
     // Handle download
     const handleDownload = async () => {
@@ -313,14 +377,14 @@ export default function StokMasukDashboard({ user }: Props) {
             if (selectedKios && selectedKios !== 'all') {
                 params.append('kios_id', selectedKios);
             }
-            if (selectedMonth && selectedMonth !== 'all') {
-                params.append('month', selectedMonth);
+            if (user.role === 'Assistant Area Manager' && selectedFA && selectedFA !== 'all') {
+                params.append('user_id', selectedFA);
             }
-            if (selectedDate && selectedDate !== 'all') {
-                params.append('date', selectedDate);
+            if (startDate) {
+                params.append('start_date', startDate);
             }
-            if (selectedYear && selectedYear !== 'all') {
-                params.append('year', selectedYear);
+            if (endDate) {
+                params.append('end_date', endDate);
             }
             params.append('download', '1');
 
@@ -444,7 +508,13 @@ export default function StokMasukDashboard({ user }: Props) {
             formDataToSend.append('user_id', formData.user_id);
             formDataToSend.append('kios_id', formData.kios_id);
             formDataToSend.append('product_id', formData.product_id);
+            if (formData.qty_kemasan_id) {
+                formDataToSend.append('qty_kemasan_id', formData.qty_kemasan_id);
+            }
             formDataToSend.append('quantity', formData.quantity);
+            if (formData.liter_or_kg) {
+                formDataToSend.append('liter_or_kg', formData.liter_or_kg);
+            }
             formDataToSend.append('tanggal', formData.tanggal);
             if (formData.foto_nota) {
                 formDataToSend.append('foto_nota', formData.foto_nota);
@@ -520,8 +590,9 @@ export default function StokMasukDashboard({ user }: Props) {
                     user_id: user.id.toString(),
                     kios_id: '',
                     product_id: '',
+                    qty_kemasan_id: '',
                     quantity: '',
-                    satuan: '',
+                    liter_or_kg: '',
                     tanggal: new Date().toISOString().split('T')[0],
                     foto_nota: null,
                 });
@@ -530,10 +601,10 @@ export default function StokMasukDashboard({ user }: Props) {
                 setSelectedStockMasuk(null);
                 setError(null);
                 await fetchStockMasuk(
-                    selectedMonth === 'all' ? undefined : selectedMonth,
                     selectedKios === 'all' ? undefined : selectedKios,
-                    selectedDate === 'all' ? undefined : selectedDate,
-                    selectedYear === 'all' ? undefined : selectedYear
+                    user.role === 'Assistant Area Manager' && selectedFA !== 'all' ? selectedFA : undefined,
+                    startDate || undefined,
+                    endDate || undefined,
                 );
             } else {
                 throw new Error(result.message || 'Gagal menyimpan data');
@@ -597,10 +668,10 @@ export default function StokMasukDashboard({ user }: Props) {
                 setDeleteId(null);
                 setError(null);
                 await fetchStockMasuk(
-                    selectedMonth === 'all' ? undefined : selectedMonth,
                     selectedKios === 'all' ? undefined : selectedKios,
-                    selectedDate === 'all' ? undefined : selectedDate,
-                    selectedYear === 'all' ? undefined : selectedYear
+                    user.role === 'Assistant Area Manager' && selectedFA !== 'all' ? selectedFA : undefined,
+                    startDate || undefined,
+                    endDate || undefined,
                 );
             } else {
                 throw new Error(result.message || 'Gagal menghapus data');
@@ -615,12 +686,18 @@ export default function StokMasukDashboard({ user }: Props) {
     // Handle edit
     const handleEdit = (item: StockMasuk) => {
         setSelectedStockMasuk(item);
+        const qtyKemasanId = item.qty_kemasan_id ? item.qty_kemasan_id.toString() : '';
+        const quantity = item.quantity.toString();
+        // Calculate liter if qty_kemasan_id exists, otherwise use existing liter_or_kg
+        const calculatedLiter = qtyKemasanId ? calculateLiter(qtyKemasanId, quantity) : item.liter_or_kg || '';
+
         setFormData({
             user_id: user.id.toString(),
             kios_id: item.kios_id.toString(),
             product_id: item.product_id.toString(),
-            quantity: item.quantity.toString(),
-            satuan: item.product.satuan || '',
+            qty_kemasan_id: qtyKemasanId,
+            quantity: quantity,
+            liter_or_kg: calculatedLiter,
             tanggal: item.tanggal.split('T')[0],
             foto_nota: null,
         });
@@ -643,8 +720,9 @@ export default function StokMasukDashboard({ user }: Props) {
             user_id: user.id.toString(),
             kios_id: '',
             product_id: '',
+            qty_kemasan_id: '',
             quantity: '',
-            satuan: '',
+            liter_or_kg: '',
             tanggal: new Date().toISOString().split('T')[0],
             foto_nota: null,
         });
@@ -676,6 +754,33 @@ export default function StokMasukDashboard({ user }: Props) {
         setPreviewImage(null);
     };
 
+    // Calculate liter automatically based on qty_kemasan and quantity
+    const calculateLiter = (qtyKemasanId: string, quantity: string): string => {
+        if (!qtyKemasanId || !quantity) {
+            return '';
+        }
+
+        const qtyKemasanValue = qtyKemasan.find((qk) => qk.id.toString() === qtyKemasanId);
+        if (!qtyKemasanValue) {
+            return '';
+        }
+
+        const qtyKemasanNum = qtyKemasanValue.qty_kemasan;
+        const quantityNum = parseFloat(quantity);
+
+        if (isNaN(quantityNum) || quantityNum <= 0) {
+            return '';
+        }
+
+        const liter = (qtyKemasanNum * quantityNum) / 1000;
+
+        // Format: hapus trailing zero dan desimal yang tidak perlu
+        // Contoh: 1.000 -> 1, 1.500 -> 1.5, 0.500 -> 0.5
+        const formattedLiter = liter % 1 === 0 ? liter.toString() : parseFloat(liter.toFixed(3)).toString();
+
+        return `${formattedLiter} Liter`;
+    };
+
     return (
         <>
             <Head title="Stock Masuk" />
@@ -699,9 +804,33 @@ export default function StokMasukDashboard({ user }: Props) {
 
                     {/* Filter */}
                     <Card className="mb-4 p-3 sm:p-4">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-4">
+                        <div
+                            className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${user.role === 'Assistant Area Manager' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} sm:gap-4`}
+                        >
+                            {user.role === 'Assistant Area Manager' && (
+                                <div className="w-full">
+                                    <Label htmlFor="fa" className="text-xs sm:text-sm">
+                                        Filter Nama FA
+                                    </Label>
+                                    <Select value={selectedFA} onValueChange={(value) => setSelectedFA(value)}>
+                                        <SelectTrigger id="fa" className="h-9 text-xs sm:text-sm">
+                                            <SelectValue placeholder="Pilih FA" />
+                                        </SelectTrigger>
+                                        <SelectContent side="bottom">
+                                            <SelectItem value="all">Semua FA</SelectItem>
+                                            {users.map((u) => (
+                                                <SelectItem key={u.id} value={u.id.toString()}>
+                                                    {u.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div className="w-full">
-                                <Label htmlFor="kios" className="text-xs sm:text-sm">Filter Kios</Label>
+                                <Label htmlFor="kios" className="text-xs sm:text-sm">
+                                    Filter Kios
+                                </Label>
                                 <Select value={selectedKios} onValueChange={(value) => setSelectedKios(value)}>
                                     <SelectTrigger id="kios" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Pilih Kios" />
@@ -717,52 +846,35 @@ export default function StokMasukDashboard({ user }: Props) {
                                 </Select>
                             </div>
                             <div className="w-full">
-                                <Label htmlFor="date" className="text-xs sm:text-sm">Filter Tanggal</Label>
-                                <Select value={selectedDate} onValueChange={(value) => setSelectedDate(value)}>
-                                    <SelectTrigger id="date" className="h-9 text-xs sm:text-sm">
-                                        <SelectValue placeholder="Pilih Tanggal" />
-                                    </SelectTrigger>
-                                    <SelectContent side="bottom">
-                                        {generateDates().map((date) => (
-                                            <SelectItem key={date.value} value={date.value}>
-                                                {date.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="start_date" className="text-xs sm:text-sm">
+                                    Filter Start Date (Periode)
+                                </Label>
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="h-9 text-xs sm:text-sm"
+                                />
                             </div>
                             <div className="w-full">
-                                <Label htmlFor="month" className="text-xs sm:text-sm">Filter Bulan</Label>
-                                <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(value)}>
-                                    <SelectTrigger id="month" className="h-9 text-xs sm:text-sm">
-                                        <SelectValue placeholder="Pilih Bulan" />
-                                    </SelectTrigger>
-                                    <SelectContent side="bottom">
-                                        {generateMonths().map((month) => (
-                                            <SelectItem key={month.value} value={month.value}>
-                                                {month.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="end_date" className="text-xs sm:text-sm">
+                                    Filter End Date (Periode)
+                                </Label>
+                                <Input
+                                    id="end_date"
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="h-9 text-xs sm:text-sm"
+                                />
                             </div>
-                            <div className="w-full">
-                                <Label htmlFor="year" className="text-xs sm:text-sm">Filter Tahun</Label>
-                                <Select value={selectedYear} onValueChange={(value) => setSelectedYear(value)}>
-                                    <SelectTrigger id="year" className="h-9 text-xs sm:text-sm">
-                                        <SelectValue placeholder="Pilih Tahun" />
-                                    </SelectTrigger>
-                                    <SelectContent side="bottom">
-                                        {generateYears().map((year) => (
-                                            <SelectItem key={year.value} value={year.value}>
-                                                {year.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="w-full flex items-end">
-                                <Button variant="outline" onClick={handleDownload} className="w-full cursor-pointer items-center gap-2 h-9 text-xs sm:text-sm">
+                            <div className="flex w-full items-end">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleDownload}
+                                    className="h-9 w-full cursor-pointer items-center gap-2 text-xs sm:text-sm"
+                                >
                                     <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                                     <span className="hidden sm:inline">Download Excel</span>
                                     <span className="sm:hidden">Download</span>
@@ -776,27 +888,27 @@ export default function StokMasukDashboard({ user }: Props) {
                             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                         </div>
                     ) : (
-                        <div className="w-full overflow-x-auto -mx-2 sm:-mx-4 md:mx-0">
+                        <div className="-mx-2 w-full overflow-x-auto sm:-mx-4 md:mx-0">
                             <div className="inline-block min-w-full align-middle">
                                 <Table className="w-full">
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">NAMA FA</TableHead>
-                                            <TableHead className="min-w-[120px] sm:min-w-[150px] text-xs sm:text-sm">NAMA KIOS</TableHead>
-                                            <TableHead className="min-w-[150px] sm:min-w-[200px] text-xs sm:text-sm">BARANG MASUK</TableHead>
-                                            <TableHead className="min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">QUANTUM (PCS)</TableHead>
-                                            <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">SATUAN</TableHead>
-                                            <TableHead className="min-w-[130px] sm:min-w-[150px] text-xs sm:text-sm">TANGGAL BARANG MASUK</TableHead>
-                                            <TableHead className="min-w-[100px] sm:min-w-[150px] text-xs sm:text-sm">FOTO NOTA</TableHead>
+                                            <TableHead className="min-w-[120px] text-xs sm:min-w-[150px] sm:text-sm">NAMA FA</TableHead>
+                                            <TableHead className="min-w-[120px] text-xs sm:min-w-[150px] sm:text-sm">NAMA KIOS</TableHead>
+                                            <TableHead className="min-w-[150px] text-xs sm:min-w-[200px] sm:text-sm">BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[100px] text-xs sm:min-w-[120px] sm:text-sm">QUANTUM (pcs/botol)</TableHead>
+                                            <TableHead className="min-w-[80px] text-xs sm:min-w-[100px] sm:text-sm">LITER/KG</TableHead>
+                                            <TableHead className="min-w-[130px] text-xs sm:min-w-[150px] sm:text-sm">TANGGAL BARANG MASUK</TableHead>
+                                            <TableHead className="min-w-[100px] text-xs sm:min-w-[150px] sm:text-sm">FOTO NOTA</TableHead>
                                             {(user.role === 'Field Assistant' || user.role === 'Assistant Area Manager') && (
-                                                <TableHead className="min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">Aksi</TableHead>
+                                                <TableHead className="min-w-[80px] text-xs sm:min-w-[100px] sm:text-sm">Aksi</TableHead>
                                             )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {tableRows.map((row, index) => (
                                             <TableRow key={row.item.id}>
-                                                <TableCell className="align-top font-medium text-xs sm:text-sm">{row.item.user.name}</TableCell>
+                                                <TableCell className="align-top text-xs font-medium sm:text-sm">{row.item.user.name}</TableCell>
                                                 <TableCell className="align-top text-xs sm:text-sm">{row.item.kios.nama}</TableCell>
                                                 <TableCell className="align-top text-xs sm:text-sm">
                                                     <div>
@@ -805,7 +917,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="align-top text-xs sm:text-sm">{row.item.quantity}</TableCell>
-                                                <TableCell className="align-top text-xs sm:text-sm">{row.item.product.satuan || '-'}</TableCell>
+                                                <TableCell className="align-top text-xs sm:text-sm">{row.item.liter_or_kg || '-'}</TableCell>
                                                 <TableCell className="align-top text-xs sm:text-sm">
                                                     {(() => {
                                                         const date = new Date(row.item.tanggal);
@@ -821,7 +933,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                             onClick={() => {
                                                                 // Normalize URL to remove double slashes
                                                                 let imageUrl = row.item.foto_nota_url || `/storage/${row.item.foto_nota}`;
-                                                                
+
                                                                 // Normalize URL: split by :// to preserve protocol, then normalize path
                                                                 const urlParts = imageUrl.split('://');
                                                                 if (urlParts.length === 2) {
@@ -832,13 +944,13 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                     // If no protocol, just normalize slashes
                                                                     imageUrl = imageUrl.replace(/\/{2,}/g, '/');
                                                                 }
-                                                                
+
                                                                 setPreviewImageUrl(imageUrl);
                                                                 setImageLoadError(false);
                                                                 imageErrorHandled.current = false;
                                                                 setIsImagePreviewOpen(true);
                                                             }}
-                                                            className="inline-flex cursor-pointer items-center gap-1 sm:gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs sm:text-sm"
+                                                            className="inline-flex cursor-pointer items-center gap-1 text-xs text-blue-600 hover:text-blue-800 sm:gap-2 sm:text-sm dark:text-blue-400"
                                                         >
                                                             <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             <span className="hidden sm:inline">Lihat Foto</span>
@@ -855,7 +967,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                 variant="outline"
                                                                 size="sm"
                                                                 onClick={() => handleEdit(row.item)}
-                                                                className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer p-0"
+                                                                className="h-7 w-7 cursor-pointer p-0 sm:h-8 sm:w-8"
                                                             >
                                                                 <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
@@ -866,7 +978,7 @@ export default function StokMasukDashboard({ user }: Props) {
                                                                     setDeleteId(row.item.id);
                                                                     setIsDeleteDialogOpen(true);
                                                                 }}
-                                                                className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer p-0 text-red-600 hover:text-red-700"
+                                                                className="h-7 w-7 cursor-pointer p-0 text-red-600 hover:text-red-700 sm:h-8 sm:w-8"
                                                             >
                                                                 <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </Button>
@@ -893,7 +1005,7 @@ export default function StokMasukDashboard({ user }: Props) {
 
                     {/* Dialog untuk Add/Edit */}
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto sm:max-w-2xl p-4 sm:p-6">
+                        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
                             <DialogHeader>
                                 <DialogTitle>{selectedStockMasuk ? 'Edit Stock Masuk' : 'Tambah Stock Masuk'}</DialogTitle>
                                 <DialogDescription>
@@ -901,9 +1013,11 @@ export default function StokMasukDashboard({ user }: Props) {
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                                <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="user_name" className="text-xs sm:text-sm">NAMA FA *</Label>
+                                        <Label htmlFor="user_name" className="text-xs sm:text-sm">
+                                            NAMA FA *
+                                        </Label>
                                         <Input
                                             id="user_name"
                                             type="text"
@@ -914,7 +1028,9 @@ export default function StokMasukDashboard({ user }: Props) {
                                         <input type="hidden" name="user_id" value={formData.user_id} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="kios_id" className="text-xs sm:text-sm">NAMA KIOS *</Label>
+                                        <Label htmlFor="kios_id" className="text-xs sm:text-sm">
+                                            NAMA KIOS *
+                                        </Label>
                                         <select
                                             id="kios_id"
                                             value={formData.kios_id}
@@ -940,7 +1056,9 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="product_id" className="text-xs sm:text-sm">BARANG MASUK *</Label>
+                                    <Label htmlFor="product_id" className="text-xs sm:text-sm">
+                                        BARANG MASUK *
+                                    </Label>
                                     <select
                                         id="product_id"
                                         value={formData.product_id}
@@ -964,38 +1082,68 @@ export default function StokMasukDashboard({ user }: Props) {
                                     </select>
                                     {fieldErrors.product_id && <p className="text-sm text-red-500">{fieldErrors.product_id}</p>}
                                 </div>
-                                <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="quantity" className="text-xs sm:text-sm">QUANTUM (PCS) *</Label>
-                                        <Input
-                                            id="quantity"
-                                            type="number"
-                                            min="1"
-                                            value={formData.quantity}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, quantity: e.target.value });
-                                                if (fieldErrors.quantity) {
-                                                    setFieldErrors({ ...fieldErrors, quantity: '' });
-                                                }
-                                            }}
-                                            className={fieldErrors.quantity ? 'border-red-500' : ''}
-                                            required
-                                        />
-                                        {fieldErrors.quantity && <p className="text-sm text-red-500">{fieldErrors.quantity}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="satuan" className="text-xs sm:text-sm">SATUAN</Label>
-                                        <Input
-                                            id="satuan"
-                                            type="text"
-                                            value={formData.satuan}
-                                            readOnly
-                                            className="cursor-not-allowed bg-gray-50 dark:bg-gray-700"
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="qty_kemasan_id" className="text-xs sm:text-sm">
+                                        QTY KEMASAN <span className="text-red-500 italic">(sesuaikan dengan kemasan barang masuk)</span>
+                                    </Label>
+                                    <select
+                                        id="qty_kemasan_id"
+                                        value={formData.qty_kemasan_id}
+                                        onChange={(e) => {
+                                            const newQtyKemasanId = e.target.value;
+                                            const calculatedLiter = calculateLiter(newQtyKemasanId, formData.quantity);
+                                            setFormData({
+                                                ...formData,
+                                                qty_kemasan_id: newQtyKemasanId,
+                                                liter_or_kg: calculatedLiter,
+                                            });
+                                            if (fieldErrors.qty_kemasan_id) {
+                                                setFieldErrors({ ...fieldErrors, qty_kemasan_id: '' });
+                                            }
+                                        }}
+                                        className={`flex h-9 w-full cursor-pointer rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            fieldErrors.qty_kemasan_id ? 'border-red-500' : 'border-input'
+                                        }`}
+                                    >
+                                        <option value="">Pilih Qty Kemasan</option>
+                                        {qtyKemasan.map((qk) => (
+                                            <option key={qk.id} value={qk.id}>
+                                                {qk.qty_kemasan}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {fieldErrors.qty_kemasan_id && <p className="text-sm text-red-500">{fieldErrors.qty_kemasan_id}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tanggal" className="text-xs sm:text-sm">TANGGAL BARANG MASUK *</Label>
+                                    <Label htmlFor="quantity" className="text-xs sm:text-sm">
+                                        QUANTUM (pcs/botol) *
+                                    </Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        min="1"
+                                        value={formData.quantity}
+                                        onChange={(e) => {
+                                            const newQuantity = e.target.value;
+                                            const calculatedLiter = calculateLiter(formData.qty_kemasan_id, newQuantity);
+                                            setFormData({
+                                                ...formData,
+                                                quantity: newQuantity,
+                                                liter_or_kg: calculatedLiter,
+                                            });
+                                            if (fieldErrors.quantity) {
+                                                setFieldErrors({ ...fieldErrors, quantity: '' });
+                                            }
+                                        }}
+                                        className={fieldErrors.quantity ? 'border-red-500' : ''}
+                                        required
+                                    />
+                                    {fieldErrors.quantity && <p className="text-sm text-red-500">{fieldErrors.quantity}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tanggal" className="text-xs sm:text-sm">
+                                        TANGGAL BARANG MASUK *
+                                    </Label>
                                     <Input
                                         id="tanggal"
                                         type="date"
@@ -1012,7 +1160,9 @@ export default function StokMasukDashboard({ user }: Props) {
                                     {fieldErrors.tanggal && <p className="text-sm text-red-500">{fieldErrors.tanggal}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="foto_nota" className="text-xs sm:text-sm">FOTO NOTA</Label>
+                                    <Label htmlFor="foto_nota" className="text-xs sm:text-sm">
+                                        FOTO NOTA
+                                    </Label>
                                     <Input id="foto_nota" type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
                                     {previewImage && (
                                         <div className="relative mt-2 inline-block">
@@ -1029,20 +1179,20 @@ export default function StokMasukDashboard({ user }: Props) {
                                         </div>
                                     )}
                                 </div>
-                                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                                <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-0">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setIsDialogOpen(false)}
                                         disabled={isSubmitting}
-                                        className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm"
+                                        className="w-full cursor-pointer text-xs sm:w-auto sm:text-sm"
                                     >
                                         Batal
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full sm:w-auto text-xs sm:text-sm">
+                                    <Button type="submit" disabled={isSubmitting} className="w-full cursor-pointer text-xs sm:w-auto sm:text-sm">
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                                <Loader2 className="mr-2 h-3 w-3 animate-spin sm:h-4 sm:w-4" />
                                                 Menyimpan...
                                             </>
                                         ) : (
@@ -1085,16 +1235,14 @@ export default function StokMasukDashboard({ user }: Props) {
                         <DialogContent className="max-w-[90vw] sm:max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle>Preview Foto Nota</DialogTitle>
-                                <DialogDescription>
-                                    Preview foto nota untuk stock masuk
-                                </DialogDescription>
+                                <DialogDescription>Preview foto nota untuk stock masuk</DialogDescription>
                             </DialogHeader>
                             {previewImageUrl && (
-                                <div className="flex items-center justify-center p-4 min-h-[200px] max-h-[70vh] overflow-auto">
+                                <div className="flex max-h-[70vh] min-h-[200px] items-center justify-center overflow-auto p-4">
                                     {imageLoadError ? (
-                                        <div className="text-center p-8 text-muted-foreground">
+                                        <div className="p-8 text-center text-muted-foreground">
                                             <p>Gambar tidak dapat dimuat</p>
-                                            <p className="text-sm mt-2">URL: {previewImageUrl}</p>
+                                            <p className="mt-2 text-sm">URL: {previewImageUrl}</p>
                                         </div>
                                     ) : (
                                         <img

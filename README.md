@@ -1,8 +1,8 @@
-# Smart Inventory
+# The Architects
 
 [![CI/CD Pipeline](https://github.com/samsudin47/smart-inventory/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/samsudin47/smart-inventory/actions/workflows/ci-cd.yml)
 
-Aplikasi Smart Inventory Management System built with Laravel dan React (Inertia.js).
+Aplikasi The Architects Management System built with Laravel dan React (Inertia.js).
 
 ## 🚀 Features
 
