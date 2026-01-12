@@ -1,6 +1,6 @@
 // Components
-import PasswordResetLinkController from '@/actions/App/Http/Controllers/Auth/PasswordResetLinkController';
 import { login } from '@/routes';
+import passwordEmail from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
 
             <div className="space-y-6">
-                <Form {...PasswordResetLinkController.store.form()}>
+                <Form {...passwordEmail.email()}>
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
