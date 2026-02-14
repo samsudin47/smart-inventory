@@ -374,15 +374,26 @@ class StockTersediaController extends Controller
         $row = 4;
         $no = 1;
         foreach ($stockTersedia as $item) {
+            // Skip if product or kios data is missing
+            if (!isset($item['product']) || !isset($item['kios'])) {
+                continue;
+            }
+            
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('B' . $row, $item['product']['nama'] ?? '');
             $sheet->setCellValue('C' . $row, $item['product']['kemasan'] ?? '');
             $sheet->setCellValue('D' . $row, $item['product']['satuan'] ?? '');
             $sheet->setCellValue('E' . $row, $item['kios']['nama'] ?? '');
-            $sheet->setCellValue('F' . $row, $item['total_masuk']);
-            $sheet->setCellValue('G' . $row, $item['total_keluar']);
-            $sheet->setCellValue('H' . $row, $item['quantity_tersedia']);
-            $bulanText = $item['bulan'] ? Carbon::createFromFormat('Y-m', $item['bulan'])->format('F Y') : '-';
+            $sheet->setCellValue('F' . $row, $item['total_masuk'] ?? 0);
+            $sheet->setCellValue('G' . $row, $item['total_keluar'] ?? 0);
+            $sheet->setCellValue('H' . $row, $item['quantity_tersedia'] ?? 0);
+            try {
+                $bulanText = isset($item['bulan']) && $item['bulan'] 
+                    ? Carbon::createFromFormat('Y-m', $item['bulan'])->format('F Y') 
+                    : '-';
+            } catch (\Exception $e) {
+                $bulanText = '-';
+            }
             $sheet->setCellValue('I' . $row, $bulanText);
             $row++;
         }
@@ -396,8 +407,8 @@ class StockTersediaController extends Controller
         if ($kiosFilter) {
             $filenameParts[] = str_replace(' ', '-', strtolower($kiosFilter));
         }
-        if ($monthFilter) {
-            $filenameParts[] = str_replace(' ', '-', strtolower($monthFilter));
+        if ($periodeFilter) {
+            $filenameParts[] = str_replace(' ', '-', strtolower($periodeFilter));
         }
         $filename = count($filenameParts) > 0
             ? 'stock-tersedia-' . implode('-', $filenameParts) . '.xlsx'

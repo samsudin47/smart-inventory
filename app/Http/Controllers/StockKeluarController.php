@@ -479,9 +479,17 @@ class StockKeluarController extends Controller
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('B' . $row, $item->user->name ?? '');
             $sheet->setCellValue('C' . $row, $item->kios->nama ?? '');
-            $sheet->setCellValue('D' . $row, ($item->product->nama ?? '') . ' - ' . ($item->product->kemasan ?? ''));
-            $sheet->setCellValue('E' . $row, $item->quantity);
-            $sheet->setCellValue('F' . $row, Carbon::parse($item->tanggal)->format('d M Y'));
+            $productName = ($item->product->nama ?? '');
+            $productKemasan = ($item->product->kemasan ?? '');
+            $productText = $productName . ($productKemasan ? ' - ' . $productKemasan : '');
+            $sheet->setCellValue('D' . $row, $productText);
+            $sheet->setCellValue('E' . $row, $item->quantity ?? 0);
+            try {
+                $tanggalText = $item->tanggal ? Carbon::parse($item->tanggal)->format('d M Y') : '-';
+            } catch (\Exception $e) {
+                $tanggalText = $item->tanggal ?? '-';
+            }
+            $sheet->setCellValue('F' . $row, $tanggalText);
             $row++;
         }
 
@@ -494,14 +502,8 @@ class StockKeluarController extends Controller
         if ($kiosFilter) {
             $filenameParts[] = str_replace(' ', '-', strtolower($kiosFilter));
         }
-        if ($dateFilter) {
-            $filenameParts[] = str_replace(' ', '-', strtolower($dateFilter));
-        }
-        if ($monthFilter) {
-            $filenameParts[] = str_replace(' ', '-', strtolower($monthFilter));
-        }
-        if ($yearFilter) {
-            $filenameParts[] = $yearFilter;
+        if ($periodeFilter) {
+            $filenameParts[] = str_replace(' ', '-', strtolower($periodeFilter));
         }
         $filename = count($filenameParts) > 0
             ? 'stock-keluar-' . implode('-', $filenameParts) . '.xlsx'
